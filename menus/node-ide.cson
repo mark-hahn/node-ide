@@ -1,0 +1,22 @@
+# See https://atom.io/docs/latest/creating-a-package#menus for more details
+'context-menu':
+  'atom-text-editor': [
+    {
+      'label': 'Toggle node-ide'
+      'command': 'node-ide:toggle'
+    }
+  ]
+'menu': [
+  {
+    'label': 'Packages'
+    'submenu': [
+      'label': 'node-ide'
+      'submenu': [
+        {
+          'label': 'Toggle'
+          'command': 'node-ide:toggle'
+        }
+      ]
+    ]
+  }
+]

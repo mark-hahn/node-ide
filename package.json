@@ -1,0 +1,16 @@
+{
+  "name": "node-ide",
+  "main": "./lib/node-ide",
+  "version": "0.1.0",
+  "description": "A full JS/CS IDE for any node process including Atom.",
+  "activationCommands": {
+    "atom-workspace": "node-ide:toggle"
+  },
+  "repository": "https://github.com/mark-hahn/node-ide",
+  "license": "MIT",
+  "engines": {
+    "atom": ">0.150.0"
+  },
+  "dependencies": {
+  }
+}
