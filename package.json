@@ -2,12 +2,13 @@
   "name": "node-ide",
   "main": "./lib/node-ide",
   "version": "0.1.0",
-  "description": "A full source-based JS/CS IDE for any node process including Atom.",
+  "description": "A full source-based JS/CS IDE for Atom or any node target.",
   "repository": "https://github.com/mark-hahn/node-ide",
   "license": "MIT",
   "engines": {
     "atom": ">0.150.0"
   },
   "dependencies": {
+    "underscore": "*"
   }
 }
