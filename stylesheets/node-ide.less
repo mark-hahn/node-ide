@@ -1,8 +1,170 @@
-// The ui-variables file is provided by base themes provided by Atom.
-//
-// See https://github.com/atom/atom-dark-ui/blob/master/stylesheets/ui-variables.less
-// for a full listing of what's available.
-@import "ui-variables";
 
-.node-ide {
+@import "ui-variables";
+@import "syntax-variables";
+@import "octicon-utf-codes";
+
+.workspace .ide-tool-panel {
+  z-index:10;
 }
+.line-numbers .line-number.node-ide-breakpoint .icon-right {
+  &:before{content: @stop}
+  display: inline-block;
+  visibility: visible;
+  color: red; // rgba(0, 0, 256, 0.25);
+}
+.node-ide-exec-line {
+  background-color: rgba(0, 0, 256, 0.25);
+}
+.workspace .node-ide {
+  width:100%;
+  background-color: @syntax-background-color;
+  color: @syntax-text-color;
+  font-size:12px;
+  height:30px;
+  z-index:100;
+  box-shadow: inset 0 -8px 8px -4px rgba(0, 0, 0, 0.15);
+  
+  .btn{
+    height:        20px;
+    line-height:    1.7;
+    display:      block;
+    padding: 1px 4px;
+  }
+  
+  .logo {
+    margin: 4px 10px 0 10px;
+    float:left;
+    font-size:16px; 
+    color: green;
+    font-weight:bold;
+    font-style: italic;  
+  }
+
+  .new-btn {
+    display: inline-block;
+    font-family: 'Octicons Regular';
+    font-size: 1.6em;
+    font-weight: normal;
+    font-style: normal;
+    font-variant: normal;
+    text-transform: none;
+    -webkit-font-smoothing: antialiased;
+    text-decoration: none;
+    display: inline-block;
+    margin-left:4px;
+    // padding-top:  .1em;
+    padding-left:  .6em;
+    padding-right: .6em;
+    color: @text-color;
+    opacity:       .8;
+    margin-left: 0.1em;
+    border:1px solid transparent;
+    border-radius: 0.2em;
+  }
+  .new-btn.ide-pause {
+    margin-left:12px;
+    &:before{content: @playback-pause}
+  }
+  .new-btn.ide-play {
+    margin-left:12px;
+    &:before{content: @playback-play}
+  }
+  .new-btn.ide-step-over {
+    &:before{content: @arrow-right}
+  }
+  .new-btn.ide-step-in {
+    &:before{content: @arrow-down}
+  }
+  .new-btn.ide-step-out {
+    &:before{content: @arrow-up }
+  }
+  .new-btn:hover {
+    border: 1px solid @button-border-color;
+    background-color: @button-background-color-hover;
+  }
+
+  .octicon {
+    font-family: 'Octicons Regular';
+    font-size: 1.1em;
+    // color: @text-color;
+    font-weight: normal;
+    font-style: normal;
+    font-variant: normal;
+    text-transform: none;
+    -webkit-font-smoothing: antialiased;
+  }
+  .octicon.browser-btn:hover {
+    border: 1px solid @button-border-color;
+    background-color: @button-background-color-hover;
+  }
+  .octicon.octicon-check {&:before{content: @playback-pause }}
+  .octicon.octicon-check {&:before{content: @playback-play  }}
+  .octicon.octicon-check {&:before{content: @arrow-right    }}
+  .octicon.octicon-check {&:before{content: @arrow-down     }}
+  .octicon.octicon-check {&:before{content: @arrow-up       }}
+  .octicon.octicon-check {&:before{content: @stop           }}
+  
+  // .octicon.octicon-check {&:before{content: @           }}
+  // .octicon.octicon-check {&:before{content: @           }}
+  // .octicon.octicon-check {&:before{content: @           }}
+  // .octicon.octicon-check {&:before{content: @           }}
+  // .octicon.octicon-check {&:before{content: @           }}
+  
+  
+  
+  
+  
+  
+  
+}
+  // .octicon.octicon-dot   {&:before{content: @primitive-dot   }}
+  // .octicon.octicon-check {&:before{content: @check           }}
+//   primitive-square
+//   arrow-down
+//   arrow-left
+//   arrow-right
+//   arrow-up
+//   arrow-small-down
+//   arrow-small-left
+//   arrow-small-right
+//   arrow-small-up
+//   arrow-chevron-down
+//   arrow-chevron-left
+//   arrow-chevron-right
+//   arrow-chevron-up
+// bookmark
+// bug
+// clippy
+// clock
+// code
+// dash
+// camera
+// eye
+// gear
+// home
+// info
+// jump-down
+// jump-left
+// jump-right
+// jump-up
+// pencil
+// location
+// move-down
+// move-left
+// move-right
+// move-up
+// pin
+// playback-pause
+// playback-play
+// playback-fast-forward
+// search
+// plus
+// star
+// stop
+// sync
+// terminal
+// three-bars
+// tools
+// trashcan
+// triangle-down
+// x

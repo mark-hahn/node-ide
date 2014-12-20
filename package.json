@@ -8,7 +8,11 @@
   "engines": {
     "atom": ">0.150.0"
   },
+  "activationEvents": [
+    "node-ide:toggle"
+  ],
   "dependencies": {
-    "underscore": "*"
+    "underscore": "*",
+    "atom-space-pen-views": "*"
   }
 }

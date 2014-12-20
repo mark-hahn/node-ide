@@ -7,16 +7,10 @@ util       = require 'util'
 _          = require 'underscore'
 {Protocol} = require '_debugger'
 
-error = (msg, args...) ->
-  errObj = message: 'v8 interface error: ' + msg
-                  
-  console.log 'node-ie:', errObj.message, args
-  errObj
-
 module.exports =
 class V8connection
   
-  constructor: ->
+  constructor: (@ideView) ->
     @reqSeq = 1
     @reqCallbacks       = {}
     @breakCallbacks     = []
@@ -39,16 +33,19 @@ class V8connection
     @socket.on "data", (data) => protocol.execute data
     @socket.on "close", (res) => for cb in @closeCallbacks then cb res
     @socket.on "end",   (res) => for cb in @endCallbacks   then cb res
-    @socket.on "error", (err) -> 
-      error 'network error', err.message
+    @socket.on "error", (err) => 
+      @error 'network error', err.message
       if not @connected then cb err.message
 
   request: (command, args, cb) ->
-    @reqCallbacks[@reqSeq] = cb
+    if not @connected then return
+    if cb then @reqCallbacks[@reqSeq] = cb
     req = {type: 'request', seq: @reqSeq++, command}
     if args then req.arguments = args
     json = JSON.stringify req 
-    @socket.write "Content-Length: " + Buffer.byteLength(json, "utf8") + "\r\n\r\n" + json
+    @socket.write "Content-Length: " + 
+                  Buffer.byteLength(json, "utf8") + 
+                  "\r\n\r\n" + json
   
   response: (res) ->
     {type, request_seq, event, success, body} = res.body
@@ -57,11 +54,11 @@ class V8connection
         switch event
           when 'break'     then for cb in @breakCallbacks     then cb body
           when 'exception' then for cb in @exceptionCallbacks then cb body
-      when not success     then error 'response error:', res
+      when not success     then @error 'response error:', res
       when type is 'response'
-        @reqCallbacks[request_seq] body
+        @reqCallbacks[request_seq]? body
         delete @reqCallbacks[request_seq]
-      else error 'unknown response:', res
+      else @error 'unknown response:', res
         
   onBreak:     (cb) -> @breakCallbacks    .push cb
   onException: (cb) -> @exceptionCallbacks.push cb
@@ -77,8 +74,6 @@ class V8connection
       else args[types[type] ? 'bad-type'] = arg
     {args, cb}
 
-  resume: (cb) -> @request 'continue', null, -> cb? null
-  
   step: ->
     pa = @parseArgsByType arguments, number: 'stepcount', string: 'stepaction'
     @request 'continue', pa.args, -> pa.cb? null
@@ -89,13 +84,29 @@ class V8connection
     , type: 'script'
     @request 'setbreakpoint', pa.args, (res) -> 
       if res.type isnt 'scriptName' 
-        pa.cb? error 'setbreakpoint result not scriptName', res
+        pa.cb? @error 'setbreakpoint result not scriptName', res
       else pa.cb? null, res
+    
+  changebreakpoint: (args) ->
+    @request 'changebreakpoint', args, -> 
+      pa.cb? null, null    
+  
+  clearbreakpoint: (breakpoint) ->
+    @request 'clearbreakpoint', {breakpoint}
     
   getScriptBreakpoints: (cb) ->
     @request 'listbreakpoints', null, (res) -> cb? null, res
     
-  destroy: (cb) -> 
-    @request 'disconnect', null, => 
+  resume: (cb) -> @request 'continue', null, -> cb? null
+  
+  error: (msg, args...) ->
+    errObj = message: 'v8 interface error: ' + msg
+    console.log 'node-ie:', errObj.message, args
+    @ideView.destroy()
+    @destroy()
+    errObj
+
+  destroy: -> 
+    @request 'disconnect', null, =>
+      @connected = no 
       @socket.end()
-      cb?()
