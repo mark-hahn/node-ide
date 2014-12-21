@@ -16,8 +16,8 @@ module.exports = NodeIde =
   activate: (@state) ->
     console.log 'activate'
     @subs = new CompositeDisposable
-    @subs.add atom.commands.add 'atom-workspace', 'node-ide:toggle': => @toggle()
-    @newIdePanel()
+    @subs.add atom.commands.add 'atom-workspace', 
+      'node-ide:toggle': => @toggle()
 
   newIdePanel: ->  
     @ideView = new IdeView @
@@ -25,20 +25,19 @@ module.exports = NodeIde =
     @idePanel = if atom.config.get 'node-ide.panelOnBottom'
          atom.workspace.addBottomPanel idePanelOpts
     else atom.workspace.addTopPanel    idePanelOpts
-    
+  
   deactivate: ->
     @ideView.destroy()
     @idePanel.destroy()
     @subs.dispose()
   
   toggle: ->
-    if @idePanel.isVisible()
+    if not @idePanel
+      @newIdePanel()
+    else
       @ideView.destroy()
       @idePanel.destroy()
-      # @idePanel.hide()
-    else
-      # @idePanel.show()
-      @newIdePanel()
+      @idePanel = null
 
 
 ###

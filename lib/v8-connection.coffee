@@ -25,9 +25,10 @@ class V8connection
       if res.headers.Type is 'connect'
         console.log '\n------------------- v8 connect -------------------'
         @connected = yes
-        cb()
+        cb null, res
       else 
         @response res
+        
     @socket = net.connect {host, port}
     @socket.setEncoding "utf8"
     @socket.on "data", (data) => protocol.execute data
@@ -49,14 +50,16 @@ class V8connection
   
   response: (res) ->
     {type, request_seq, event, success, body} = res.body
+    msg = res.body.command ? event
+    console.log 'response', msg
     switch 
-      when type is 'event' 
+      when type is 'event'
         switch event
           when 'break'     then for cb in @breakCallbacks     then cb body
           when 'exception' then for cb in @exceptionCallbacks then cb body
       when not success     then @error 'response error:', res
       when type is 'response'
-        @reqCallbacks[request_seq]? body
+        @reqCallbacks[request_seq]? res.body
         delete @reqCallbacks[request_seq]
       else @error 'unknown response:', res
         
@@ -73,7 +76,14 @@ class V8connection
         _.extend args, arg
       else args[types[type] ? 'bad-type'] = arg
     {args, cb}
-
+    
+  version: ->
+    pa = @parseArgsByType arguments, {}
+    @request 'version', {}, (res) -> 
+      {V8Version} = res.body
+      {running}   = res
+      pa.cb? null, {V8Version, running} 
+    
   step: ->
     pa = @parseArgsByType arguments, number: 'stepcount', string: 'stepaction'
     @request 'continue', pa.args, -> pa.cb? null
@@ -83,7 +93,7 @@ class V8connection
       boolean: 'enable', number: 'line', string: 'target'
     , type: 'script'
     @request 'setbreakpoint', pa.args, (res) -> 
-      if res.type isnt 'scriptName' 
+      if res.body.type isnt 'scriptName' 
         pa.cb? @error 'setbreakpoint result not scriptName', res
       else pa.cb? null, res
     
@@ -97,16 +107,40 @@ class V8connection
   getScriptBreakpoints: (cb) ->
     @request 'listbreakpoints', null, (res) -> cb? null, res
     
-  resume: (cb) -> @request 'continue', null, -> cb? null
+  suspend: (cb) -> @request 'suspend',  null, -> cb? null
+  resume:  (cb) -> @request 'continue', null, -> cb? null
   
+  backtrace: (bottom, cb) -> 
+    @request 'backtrace',  {bottom, fromFrame:0, toFrame:10}, (res) -> 
+      cb null, res
+  
+  frame: (number, cb) -> 
+    @request 'frame', {number}, (res) -> 
+      cb null, res
+      
+  getExecPosition: (number, cb) ->
+    @frame number, (err, res) =>
+      if err then cb err; return
+      {script, line, column} = res.body
+      break for ref in res.refs when ref.handle is script.ref
+      cb null, {file: ref.name, line, column}
+      
   error: (msg, args...) ->
+    if args[0]?.indexOf?('ECONNRESET') > -1 or
+       args[1]?.indexOf?('ECONNRESET') > -1
+      console.log 'node-ide: lost connection to target'
+      @connected = no
+      for cb in @closeCallbacks then cb res
+      return message: 'node-ide: lost connection to target'
+      
+    if (bodyMsg = args[0]?.body?.message)
+      msg += ' ' + bodyMsg.toUpperCase() + ', '
     errObj = message: 'v8 interface error: ' + msg
     console.log 'node-ie:', errObj.message, args
-    @ideView.destroy()
     @destroy()
     errObj
 
-  destroy: -> 
+  destroy: ->
     @request 'disconnect', null, =>
       @connected = no 
       @socket.end()
