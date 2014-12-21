@@ -5,34 +5,24 @@
 module.exports = 
 class Breakpoint
   
-  constructor: (@ideView, @file, @line, @decoration) ->
+  constructor: (@codeExec, @codeDisplay, @id, @file, @line) ->
     @enabled = yes
     @condition = 'true'
     @ignoreCount = 0
-    @conn().setScriptBreakpoint @file, @line, 
-            {@enabled, @condition, @ignoreCount}, cb (err, res) ->
-      if err
-        @destroy()
-      else
-        {breakpoint: @id, actual_locations: @actualLocations} = res
-        @ideView.breakpoints[@id] = @
   
-  isReady: -> 
-    if not @id or @destroyed or
-       not (@conn = @ideView.getCurrentConnection())
-      @ideView.showBreakpointError @decoration
-      return no
-    yes
-      
-  enable: (@enabled) ->
-    if @isReady
-      @conn().changebreakpoint \
-          {breakpoint: @id, @enabled, @condition, @ignoreCount}
-      @ideView.showBreakpointEnabled @decoration, @enabled
+  isReady: -> not @destroyed and @codeExec.isConnected()
+  
+  setEnabled: (@enabled) -> 
+    if @isReady then @codeExec.changeBreakpoint @
+    @codeDisplay.showBreakpointEnabled @id, @enabled
     
+  setCondition:   (@condition)   ->
+    if @isReady then @codeExec.changeBreakpoint @
+    
+  setIgnoreCount: (@ignoreCount) ->
+    if @isReady then @codeExec.changeBreakpoint @
+      
   destroy: ->
     @destroyed = yes
-    @conn()?.clearbreakpoint @id
-    @decoration?.getMarker().destroy()
+    @codeDisplay.removeBreakpoint @id
     
-        
