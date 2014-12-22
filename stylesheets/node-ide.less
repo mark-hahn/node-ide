@@ -63,6 +63,13 @@
   .new-btn.ide-conn:not(.connected) {
     color:red;
   }
+  .exec-buttons{
+    position:relative;
+    display: inline-block;
+    .new-btn.disabled {
+      color: rgba(128,128, 128, 0.25);
+    }
+  }
   .new-btn:hover {
     border: 1px solid @button-border-color;
     background-color: @button-background-color-hover;

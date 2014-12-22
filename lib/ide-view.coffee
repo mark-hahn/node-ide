@@ -11,11 +11,12 @@ class IdeView extends View
     @div class: 'node-ide', =>
       @div class: 'logo', "Node-IDE"
       @div outlet:'ideConn',  class:'new-btn octicon ide-conn'
-      @div outlet:'idePause', class:'new-btn octicon ide-pause'
-      @div outlet:'ideRun',   class:'new-btn octicon ide-run'
-      @div outlet:'ideOver',  class:'new-btn octicon ide-step-over'
-      @div outlet:'ideIn',    class:'new-btn octicon ide-step-in'
-      @div outlet:'ideOut',   class:'new-btn octicon ide-step-out'
+      @div outlet: 'execButtons', class: 'exec-buttons', =>
+        @div outlet:'idePause', class:'new-btn octicon ide-pause'
+        @div outlet:'ideRun',   class:'new-btn octicon ide-run'
+        @div outlet:'ideOver',  class:'new-btn octicon ide-step-over'
+        @div outlet:'ideIn',    class:'new-btn octicon ide-step-in'
+        @div outlet:'ideOut',   class:'new-btn octicon ide-step-out'
 
   initialize: ->
     @subs = []
@@ -28,16 +29,22 @@ class IdeView extends View
   getElement: -> @
   
   showConnected: (connected)-> 
-    if connected then @ideConn.addClass    'connected'    
-    else              @ideConn.removeClass 'connected'    
+    if connected 
+      @ideConn.addClass 'connected'
+      @execButtons.find('.new-btn').removeClass 'disabled'
+    else
+      @ideConn.removeClass 'connected'
+      @execButtons.find('.new-btn').addClass 'disabled'
   
   showRunPause: (running) ->
     if running
       @idePause.css display: 'inline-block'
       @ideRun.hide()
+      @connected = no
     else
       @ideRun.css display: 'inline-block'
       @idePause.hide()     
+      @connected = yes
       
   toggleConnection: -> 
     if not @codeExec
@@ -58,12 +65,24 @@ class IdeView extends View
     @toggleConnection()
       
   setupEvents: ->
-    @subs.push @on 'click', '.ide-conn',          => @connClick();          false
-    @subs.push @on 'click', '.ide-pause',         => @codeExec.pause();     false
-    @subs.push @on 'click', '.ide-run',           => @codeExec.run();       false
-    @subs.push @on 'click', '.ide-step-over', (e) => @codeExec.step 'next'; false
-    @subs.push @on 'click', '.ide-step-in',   (e) => @codeExec.step 'in';   false
-    @subs.push @on 'click', '.ide-step-out',  (e) => @codeExec.step 'out';  false
+    @subs.push @on 'click', '.ide-conn', => 
+      @connClick()
+      false
+    @subs.push @on 'click', '.ide-pause', => 
+      if @connected then @codeExec?.pause()
+      false
+    @subs.push @on 'click', '.ide-run', => 
+      if @connected then @codeExec?.run()
+      false
+    @subs.push @on 'click', '.ide-step-over', (e) => 
+      if @connected then @codeExec?.step 'next'
+      false
+    @subs.push @on 'click', '.ide-step-in', (e) => 
+      if @connected then @codeExec?.step 'in'
+      false
+    @subs.push @on 'click', '.ide-step-out', (e) => 
+      if @connected then @codeExec?.step 'out'
+      false
       
   serialize: ->
 
