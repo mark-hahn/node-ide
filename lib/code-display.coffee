@@ -18,24 +18,6 @@ class CodeDisplay
     atom.workspace.open file, searchAllPanes: yes, initialLine: line-1
       .then (editor) -> cb editor
       
-  addBreakpoint: (breakpoint) ->
-    file = breakpoint.file
-    line = breakpoint.line
-    editor = @findShowEditor file, line, (editor) ->
-      marker = editor.markBufferPosition [line-1, 0]
-      decoration = editor.decorateMarker marker, 
-                    type: 'gutter', class: 'node-ide-breakpoint-enabled'
-      @breakpointDecorationsById[breakpoint.id] = decoration
-
-  showBreakpointEnabled: (breakpointId, enabled) ->
-    decoration = @breakpointDecorationsById[breakpointId]
-    decoration.setProperties class: 'node-ide-breakpoint' +
-                              (if enabled then '-enabled' else '-disabled')
-  
-  removeBreakpoint: (breakpointId) -> 
-      @breakpointDecorationsById[breakpointId].getMarker().destroy()
-      delete @breakpointDecorationsById[breakpointId]
-
   showCurExecLine: (curExecPosition, cb) -> 
     @removeCurExecLine()
     {file, line, column} = curExecPosition
@@ -50,12 +32,35 @@ class CodeDisplay
       @execPosMarker.destroy()
       @execPosMarker = null
   
+  addBreakpoint: (breakpoint) ->
+    file = breakpoint.file
+    line = breakpoint.line
+    editor = @findShowEditor file, line, (editor) =>
+      marker = editor.markBufferPosition [line, 0]
+      decoration = editor.decorateMarker marker, 
+                    type: 'gutter', class: 'node-ide-breakpoint-enabled'
+      @breakpointDecorationsById[breakpoint.id] = decoration
+      console.log 'addBreakpoint', @breakpointDecorationsById, breakpoint.id
+
+  showBreakpointEnabled: (breakpointId, enabled) ->
+    console.log 'showBreakpointEnabled', @breakpointDecorationsById, breakpointId
+    if (decoration = @breakpointDecorationsById[breakpointId])
+      decoration.setProperties 
+        type:  'gutter'
+        class: 'node-ide-breakpoint' +
+                (if enabled then '-enabled' else '-disabled')
+  
+  removeBreakpoint: (breakpointId) -> 
+      console.log 'removeBreakpoint', @breakpointDecorationsById, breakpointId
+      @breakpointDecorationsById[breakpointId]?.getMarker().destroy()
+      delete @breakpointDecorationsById[breakpointId]
+
   setupEvents: ->
     @subs.push $('atom-pane-container').on 'click', '.line-number', (e) =>
-      $lineNum = $ e.target
-      editor = $lineNum.closest('atom-text-editor')[0].getModel()
-      line = +$lineNum.attr 'data-buffer-row'
-      @codeExec.toggleBreakpoint editor, line
+      $tgt = $ e.target
+      editor = $tgt.closest('atom-text-editor')[0].getModel()
+      line   = $tgt.closest('.line-number').attr 'data-buffer-row'
+      @codeExec.toggleBreakpoint editor, +line
   
   destroy: ->
     @removeCurExecLine()

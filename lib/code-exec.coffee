@@ -16,6 +16,7 @@ class CodeExec
   constructor: (@ideView) ->
     @breakpoints = {}
     @running = no
+    @ideView.showRunPause @running
     process.nextTick =>
       @connection = new V8connection @
       @connection.connect dbgHost, dbgPort, (err) =>
@@ -26,8 +27,8 @@ class CodeExec
         
         @connection.version (err, res) =>
           {V8Version, @running} = res
-          console.log 'node-ide: connected to V8 version:', {V8Version, @running}
           @ideView.showRunPause @running
+          console.log 'node-ide: connected to V8 version:', {V8Version, @running}
           if not @running
             @getShowExecPosition()
             return
@@ -41,38 +42,6 @@ class CodeExec
     
   isConnected: -> @connection?
             
-  addBreakpoint: (file, line) ->
-    setScriptBreakpoint file, line, {}, cb (err, res) ->
-      if err then @destroy()
-      else
-        {breakpoint: id, actual_locations: @actualLocations} = res
-        breakpoint = new Breakpoint @, @codeDisplay, id, file, line
-        @breakpoints[id] = breakpoint
-        @codeDisplay.addBreakpoint breakpoint
-
-  changeBreakpoint: (breakpoint) ->
-    opts = _.clone breakpoint
-    opts.breakpoint = opts.id
-    delete opts.id
-    @connection.changebreakpoint opts
-                    
-  clearbreakpoint: (breakpointId) -> 
-    @connection.clearbreakpoint breakpointId
-    @breakpoints[breakpointId].destroy()
-    delete @breakpoints[breakpointId]
-
-  toggleBreakpoint: (editor, line) ->
-    file = editor.getPath()
-    for id, breakpoint of @breakpoints
-      if breakpoint.file is file and
-         breakpoint.line is line
-        if breakpoint.enabled
-          breakpoint.setEnabled no
-        else
-          @clearbreakpoint breakpoint.id
-        return
-    @addBreakpoint file, line
-    
   getShowExecPosition: (cb) ->
     @connection.getExecPosition 0, (err, res) =>
       @codeDisplay.showCurExecLine res, cb
@@ -88,9 +57,47 @@ class CodeExec
     @codeDisplay.removeCurExecLine()
     @connection.resume()
     
+  getPath: (editor) ->
+    path = editor.getPath()
+    if (pathParts = /^([a-z]:)(.*)$/i.exec path)
+      path = pathParts[1].toUpperCase() + pathParts[2]
+    path
+    
+  addBreakpoint: (file, line) ->
+    @connection.setScriptBreakpoint file, line, (err, res) =>
+      if err then @destroy()
+      else
+        {breakpoint: id, actual_locations: @actualLocations} = res.body
+        breakpoint = new Breakpoint @, @codeDisplay, id, file, line
+        @breakpoints[id] = breakpoint
+        @codeDisplay.addBreakpoint breakpoint
+
+  changeBreakpoint: (breakpoint) ->
+    {id: breakpoint, enabled, ignoreCount, condition} = breakpoint
+    args = {breakpoint, enabled, ignoreCount, condition}
+    @connection.changebreakpoint args
+                    
+  clearbreakpoint: (breakpointId) -> 
+    @connection.clearbreakpoint breakpointId
+    @breakpoints[breakpointId].destroy()
+    delete @breakpoints[breakpointId]
+
+  toggleBreakpoint: (editor, line) ->
+    file = @getPath editor
+    for id, breakpoint of @breakpoints
+      if breakpoint.file is file and
+         breakpoint.line is line
+        if breakpoint.enabled
+          breakpoint.setEnabled no
+        else
+          @clearbreakpoint breakpoint.id
+        return
+    @addBreakpoint file, line
+    
   setUpConnectionEvents: ->
     @connection.onBreak (body) =>
       @running = no
+      @ideView.showRunPause @running
       {script, sourceLine: line, sourceColumn: column} = body
       file = script.name
       if not fs.existsSync file

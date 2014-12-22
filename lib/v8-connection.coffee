@@ -50,8 +50,8 @@ class V8connection
   
   response: (res) ->
     {type, request_seq, event, success, body} = res.body
-    msg = res.body.command ? event
-    console.log 'response', msg
+    msg = 
+    console.log 'response', (res.body.command ? event), res
     switch 
       when type is 'event'
         switch event
@@ -88,18 +88,16 @@ class V8connection
     pa = @parseArgsByType arguments, number: 'stepcount', string: 'stepaction'
     @request 'continue', pa.args, -> pa.cb? null
     
-  setScriptBreakpoint: ->
-    pa = @parseArgsByType arguments, 
-      boolean: 'enable', number: 'line', string: 'target'
-    , type: 'script'
-    @request 'setbreakpoint', pa.args, (res) -> 
+  setScriptBreakpoint: (file, line, cb) ->
+    # console.log 'setScriptBreakpoint', file, line
+    args = {type: 'script', target: file, line, column: 0}
+    @request 'setbreakpoint', args, (res) -> 
       if res.body.type isnt 'scriptName' 
-        pa.cb? @error 'setbreakpoint result not scriptName', res
-      else pa.cb? null, res
+        cb? @error 'setbreakpoint result not scriptName', res
+      else cb? null, res
     
-  changebreakpoint: (args) ->
-    @request 'changebreakpoint', args, -> 
-      pa.cb? null, null    
+  changebreakpoint: (args, cb) ->
+    @request 'changebreakpoint', args, -> cb? null, null    
   
   clearbreakpoint: (breakpoint) ->
     @request 'clearbreakpoint', {breakpoint}

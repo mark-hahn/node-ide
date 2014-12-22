@@ -13,9 +13,10 @@ class Breakpoint
   isReady: -> not @destroyed and @codeExec.isConnected()
   
   setEnabled: (@enabled) -> 
-    if @isReady then @codeExec.changeBreakpoint @
-    @codeDisplay.showBreakpointEnabled @id, @enabled
-    
+    if @isReady 
+      @codeExec.changeBreakpoint @
+      @codeDisplay.showBreakpointEnabled @id, @enabled
+  
   setCondition:   (@condition)   ->
     if @isReady then @codeExec.changeBreakpoint @
     

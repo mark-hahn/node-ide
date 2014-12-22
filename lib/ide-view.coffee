@@ -37,8 +37,10 @@ class IdeView extends View
       @idePause.hide()      
   
   setupEvents: ->
-    @subs.push @on 'click', '.ide-step-over', (e) =>
-      @codeExec.step 'next'
+    @subs.push @on 'click', '.ide-step-over', (e) => @codeExec.step 'next'
+    @subs.push @on 'click', '.ide-play',          =>
+      console.log 'node-ide: ide-play'
+      @codeExec.run()
       
   serialize: ->
 
