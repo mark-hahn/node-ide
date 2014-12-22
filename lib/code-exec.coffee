@@ -17,13 +17,15 @@ class CodeExec
     @breakpoints = {}
     @ideView.showRunPause no
     process.nextTick =>
-      @connection = new V8connection @
+      @connection = new V8connection @ideView
       @connection.connect dbgHost, dbgPort, (err) =>
         if err 
           @connection = null
+          @ideView.showConnected no
           return
         @setUpConnectionEvents()
         
+        @ideView.showConnected yes
         @connection.version (err, res) =>
           {V8Version, running} = res
           @ideView.showRunPause running
@@ -115,5 +117,6 @@ class CodeExec
   destroy: ->
     for id of @breakpoints then @clearbreakpoint id
     @connection?.destroy()
+    @ideView.showConnected no
     console.log 'node-ide: disconnected'
 

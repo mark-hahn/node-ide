@@ -2,7 +2,7 @@
    lib/code-display.coffee
 ###
 
-{$}          = require 'atom-space-pen-views'
+{$} = require 'atom-space-pen-views'
 
 module.exports =
 class CodeDisplay

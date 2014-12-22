@@ -14,8 +14,8 @@ module.exports = NodeIde =
     @subs.add atom.commands.add 'atom-workspace', 
       'node-ide:toggle': => @toggle()
 
-  newIdePanel: ->  
-    @ideView = new IdeView @
+  newIdePanel: ->
+    @ideView = new IdeView
     idePanelOpts = item: @ideView.getElement(), visible: false
     @idePanel = if atom.config.get 'node-ide.panelOnBottom'
          atom.workspace.addBottomPanel idePanelOpts

@@ -48,13 +48,6 @@
 
   .new-btn {
     display: inline-block;
-    font-family: 'Octicons Regular';
-    font-size: 1.6em;
-    font-weight: normal;
-    font-style: normal;
-    font-variant: normal;
-    text-transform: none;
-    -webkit-font-smoothing: antialiased;
     text-decoration: none;
     display: inline-block;
     margin-left:4px;
@@ -67,31 +60,16 @@
     border:1px solid transparent;
     border-radius: 0.2em;
   }
-  .new-btn.ide-pause {
-    margin-left:12px;
-    &:before{content: @playback-pause}
-  }
-  .new-btn.ide-run {
-    margin-left:12px;
-    &:before{content: @playback-play}
-  }
-  .new-btn.ide-step-over {
-    &:before{content: @arrow-right}
-  }
-  .new-btn.ide-step-in {
-    &:before{content: @arrow-down}
-  }
-  .new-btn.ide-step-out {
-    &:before{content: @arrow-up }
+  .new-btn.ide-conn:not(.connected) {
+    color:red;
   }
   .new-btn:hover {
     border: 1px solid @button-border-color;
     background-color: @button-background-color-hover;
   }
-
   .octicon {
     font-family: 'Octicons Regular';
-    font-size: 1.1em;
+    font-size: 1.6em;
     // color: @text-color;
     font-weight: normal;
     font-style: normal;
@@ -99,20 +77,17 @@
     text-transform: none;
     -webkit-font-smoothing: antialiased;
   }
-  .octicon.browser-btn:hover {
-    border: 1px solid @button-border-color;
-    background-color: @button-background-color-hover;
-  }
-  .octicon.octicon-check {&:before{content: @playback-pause }}
-  .octicon.octicon-check {&:before{content: @playback-play  }}
-  .octicon.octicon-check {&:before{content: @arrow-right    }}
-  .octicon.octicon-check {&:before{content: @arrow-down     }}
-  .octicon.octicon-check {&:before{content: @arrow-up       }}
-  .octicon.octicon-check {&:before{content: @stop           }}
-  .octicon.octicon-check {&:before{content: @zap            }}
+
+  .octicon.ide-conn      {&:before{content: @zap            }}
+  .octicon.ide-pause     {&:before{content: @playback-pause }}
+  .octicon.ide-run       {&:before{content: @playback-play  }}
+  .octicon.ide-step-over {&:before{content: @arrow-right    }}
+  .octicon.ide-step-in   {&:before{content: @arrow-down     }}
+  .octicon.ide-step-out  {&:before{content: @arrow-up       }}
+  .octicon.ide-stop      {&:before{content: @stop           }}
   
-  // .octicon.octicon-check {&:before{content: @           }}
-  // .octicon.octicon-check {&:before{content: @           }}
-  // .octicon.octicon-check {&:before{content: @           }}
-  // .octicon.octicon-check {&:before{content: @           }}
+  // .octicon. {&:before{content: @           }}
+  // .octicon. {&:before{content: @           }}
+  // .octicon. {&:before{content: @           }}
+  // .octicon. {&:before{content: @           }}
 }

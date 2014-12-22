@@ -25,6 +25,7 @@ class V8connection
       if res.headers.Type is 'connect'
         # console.log '\n------------------- v8 connect -------------------'
         @connected = yes
+        @ideView.showConnected yes
         cb null, res
       else 
         @response res
@@ -126,6 +127,7 @@ class V8connection
        args[1]?.indexOf?('ECONNRESET') > -1
       console.log 'node-ide: lost connection to target'
       @connected = no
+      @ideView.showConnected no
       for cb in @closeCallbacks then cb res
       return message: 'node-ide: lost connection to target'
       
@@ -140,3 +142,4 @@ class V8connection
     @request 'disconnect', null, =>
       @connected = no 
       @socket.end()
+      @ideView.showConnected no
