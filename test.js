@@ -1,11 +1,16 @@
 
 i = 0;
 
-function f(x) {
-  x=3;
-  i += 1;
+// while (true) {
+//  x=1;
+//  y=2;  
+//  f()
+// }
+
+function f() {
+  x=3; i += 1;
   console.log(i);
-  setTimeout(f, 2000);
+  setTimeout(f, 0);
 } 
 
 f()

@@ -5,7 +5,7 @@
 module.exports = 
 class Breakpoint
   
-  constructor: (@codeExec, @codeDisplay, @id, @file, @line) ->
+  constructor: (@codeExec, @codeDisplay, @id, @file, @line, @column) ->
     @enabled = yes
     @condition = 'true'
     @ignoreCount = 0
@@ -15,7 +15,7 @@ class Breakpoint
   setEnabled: (@enabled) -> 
     if @isReady 
       @codeExec.changeBreakpoint @
-      @codeDisplay.showBreakpointEnabled @id, @enabled
+      @codeDisplay.showBreakpointEnabled @, @enabled
   
   setCondition:   (@condition)   ->
     if @isReady then @codeExec.changeBreakpoint @

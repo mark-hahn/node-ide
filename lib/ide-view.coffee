@@ -11,7 +11,7 @@ class IdeView extends View
     @div class: 'node-ide', =>
       @div class: 'logo', "Node-IDE"
       @div outlet:'idePause', class:'new-btn ide-pause'
-      @div outlet:'idePlay',  class:'new-btn ide-play'
+      @div outlet:'ideRun',   class:'new-btn ide-run'
       @div outlet:'ideOver',  class:'new-btn ide-step-over'
       @div outlet:'ideIn',    class:'new-btn ide-step-in'
       @div outlet:'ideOut',   class:'new-btn ide-step-out'
@@ -28,19 +28,20 @@ class IdeView extends View
               
   getElement: -> @
   
-  showRunPause: ->
-    if @running
+  showRunPause: (running) ->
+    if running
       @idePause.css display: 'inline-block'
-      @idePlay.hide()
+      @ideRun.hide()
     else
-      @idePlay.css display: 'inline-block'
+      @ideRun.css display: 'inline-block'
       @idePause.hide()      
   
   setupEvents: ->
-    @subs.push @on 'click', '.ide-step-over', (e) => @codeExec.step 'next'
-    @subs.push @on 'click', '.ide-play',          =>
-      console.log 'node-ide: ide-play'
-      @codeExec.run()
+    @subs.push @on 'click', '.ide-pause',         => @codeExec.pause();     false
+    @subs.push @on 'click', '.ide-run',           => @codeExec.run();       false
+    @subs.push @on 'click', '.ide-step-over', (e) => @codeExec.step 'next'; false
+    @subs.push @on 'click', '.ide-step-in',   (e) => @codeExec.step 'in';   false
+    @subs.push @on 'click', '.ide-step-out',  (e) => @codeExec.step 'out';  false
       
   serialize: ->
 

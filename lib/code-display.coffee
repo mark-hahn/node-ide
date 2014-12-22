@@ -14,6 +14,12 @@ class CodeDisplay
   
   setCodeExec: (@codeExec) ->
 
+  setCursorToLineColDelayed: (line, column) ->
+    setTimeout -> 
+      atom.workspace.getActiveTextEditor()
+          .setCursorBufferPosition [line, column]
+    , 100
+    
   findShowEditor: (file, line, cb) ->
     atom.workspace.open file, searchAllPanes: yes, initialLine: line-1
       .then (editor) -> cb editor
@@ -22,9 +28,10 @@ class CodeDisplay
     @removeCurExecLine()
     {file, line, column} = curExecPosition
     editor = @findShowEditor file, line, (editor) =>
-      @execPosMarker = editor.markBufferPosition [line, 0]
+      @execPosMarker = editor.markBufferPosition [line, column]
       editor.decorateMarker @execPosMarker, 
                             type: 'line', class: 'node-ide-exec-line'
+      @setCursorToLineColDelayed line, column
       cb?()
       
   removeCurExecLine: -> 
@@ -33,26 +40,30 @@ class CodeDisplay
       @execPosMarker = null
   
   addBreakpoint: (breakpoint) ->
-    file = breakpoint.file
-    line = breakpoint.line
+    file   = breakpoint.file
+    line   = breakpoint.line
+    column = breakpoint.column
     editor = @findShowEditor file, line, (editor) =>
-      marker = editor.markBufferPosition [line, 0]
+      marker = editor.markBufferPosition [line, column]
       decoration = editor.decorateMarker marker, 
                     type: 'gutter', class: 'node-ide-breakpoint-enabled'
       @breakpointDecorationsById[breakpoint.id] = decoration
-      console.log 'addBreakpoint', @breakpointDecorationsById, breakpoint.id
+      @setCursorToLineColDelayed line, column
 
-  showBreakpointEnabled: (breakpointId, enabled) ->
-    console.log 'showBreakpointEnabled', @breakpointDecorationsById, breakpointId
-    if (decoration = @breakpointDecorationsById[breakpointId])
-      decoration.setProperties 
-        type:  'gutter'
-        class: 'node-ide-breakpoint' +
-                (if enabled then '-enabled' else '-disabled')
-  
+  showBreakpointEnabled: (breakpoint, enabled) ->
+    decoration = @breakpointDecorationsById[breakpoint.id]
+    decoration.setProperties 
+      type:  'gutter'
+      class: 'node-ide-breakpoint' +
+              (if enabled then '-enabled' else '-disabled')
+      @setCursorToLineColDelayed breakpoint.line, breakpoint.column
+      
   removeBreakpoint: (breakpointId) -> 
-      console.log 'removeBreakpoint', @breakpointDecorationsById, breakpointId
-      @breakpointDecorationsById[breakpointId]?.getMarker().destroy()
+    if (decoration = @breakpointDecorationsById[breakpointId])
+      marker = decoration.getMarker()
+      pos = marker.getBufferRange().start
+      @setCursorToLineColDelayed pos.row, pos.column
+      marker.destroy()
       delete @breakpointDecorationsById[breakpointId]
 
   setupEvents: ->
@@ -61,6 +72,7 @@ class CodeDisplay
       editor = $tgt.closest('atom-text-editor')[0].getModel()
       line   = $tgt.closest('.line-number').attr 'data-buffer-row'
       @codeExec.toggleBreakpoint editor, +line
+    false
   
   destroy: ->
     @removeCurExecLine()

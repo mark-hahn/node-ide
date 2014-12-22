@@ -23,7 +23,7 @@ class V8connection
     protocol = new Protocol()
     protocol.onResponse = (res) => process.nextTick =>  
       if res.headers.Type is 'connect'
-        console.log '\n------------------- v8 connect -------------------'
+        # console.log '\n------------------- v8 connect -------------------'
         @connected = yes
         cb null, res
       else 
@@ -49,18 +49,25 @@ class V8connection
                   "\r\n\r\n" + json
   
   response: (res) ->
-    {type, request_seq, event, success, body} = res.body
-    msg = 
-    console.log 'response', (res.body.command ? event), res
-    switch 
-      when type is 'event'
+    {type, event, command, request_seq, success, message, body} = res.body
+    # console.log 'response', (command ? event), res
+    switch type
+      
+      when 'event'
         switch event
           when 'break'     then for cb in @breakCallbacks     then cb body
           when 'exception' then for cb in @exceptionCallbacks then cb body
-      when not success     then @error 'response error:', res
-      when type is 'response'
-        @reqCallbacks[request_seq]? res.body
-        delete @reqCallbacks[request_seq]
+          
+      when 'response'
+        if not (cb = @reqCallbacks[request_seq])
+          console.log 'request callback missing', @reqCallbacks, res
+        else
+          args = if not success then [message, null] else [null, res.body]
+          ignoreErr = cb args...
+          delete @reqCallbacks[request_seq]
+          if not success and ignoreErr isnt true
+            @error 'response error:', res
+        
       else @error 'unknown response:', res
         
   onBreak:     (cb) -> @breakCallbacks    .push cb
@@ -68,30 +75,20 @@ class V8connection
   onClose:     (cb) -> @closeCallbacks    .push cb
   onEnd:       (cb) -> @endCallbacks      .push cb
 
-  parseArgsByType: (argsIn, types, args = {}) ->
-    for arg in argsIn
-      type = typeof arg
-      if type is 'function' then cb = arg
-      else if type is 'object' and not types['object'] 
-        _.extend args, arg
-      else args[types[type] ? 'bad-type'] = arg
-    {args, cb}
-    
-  version: ->
-    pa = @parseArgsByType arguments, {}
-    @request 'version', {}, (res) -> 
+  version: (cb) ->
+    @request 'version', {}, (err, res) -> 
       {V8Version} = res.body
       {running}   = res
-      pa.cb? null, {V8Version, running} 
+      cb null, {V8Version, running} 
     
-  step: ->
-    pa = @parseArgsByType arguments, number: 'stepcount', string: 'stepaction'
-    @request 'continue', pa.args, -> pa.cb? null
+  step: (stepaction, cb, stepcount=1) ->
+    args = {stepaction, stepcount}
+    @request 'continue', args, -> cb? null
     
   setScriptBreakpoint: (file, line, cb) ->
     # console.log 'setScriptBreakpoint', file, line
     args = {type: 'script', target: file, line, column: 0}
-    @request 'setbreakpoint', args, (res) -> 
+    @request 'setbreakpoint', args, (err, res) -> 
       if res.body.type isnt 'scriptName' 
         cb? @error 'setbreakpoint result not scriptName', res
       else cb? null, res
@@ -103,18 +100,19 @@ class V8connection
     @request 'clearbreakpoint', {breakpoint}
     
   getScriptBreakpoints: (cb) ->
-    @request 'listbreakpoints', null, (res) -> cb? null, res
+    @request 'listbreakpoints', null, (err, res) -> cb? null, res
     
   suspend: (cb) -> @request 'suspend',  null, -> cb? null
   resume:  (cb) -> @request 'continue', null, -> cb? null
   
   backtrace: (bottom, cb) -> 
-    @request 'backtrace',  {bottom, fromFrame:0, toFrame:10}, (res) -> 
+    @request 'backtrace',  {bottom, fromFrame:0, toFrame:10}, (err, res) -> 
       cb null, res
   
   frame: (number, cb) -> 
-    @request 'frame', {number}, (res) -> 
-      cb null, res
+    @request 'frame', {number}, (err, res) -> 
+      cb err, res
+      if err is 'No frames' then return true
       
   getExecPosition: (number, cb) ->
     @frame number, (err, res) =>
