@@ -14,7 +14,9 @@ module.exports =
 class CodeExec
   
   constructor: (@ideView) ->
-    @breakpoints = {}
+    {state, @breakpointMgr} = @ideView
+    @breakpoints = state.breakpoints
+    
     @ideView.showRunPause no
     process.nextTick =>
       @connection = new V8connection @ideView
@@ -24,7 +26,8 @@ class CodeExec
           @ideView.showConnected no
           return
         @setUpConnectionEvents()
-        
+        @breakpointMgr.setCodeExec @
+        @codeDisplay = @breakpointMgr.codeDisplay
         @ideView.showConnected yes
         @connection.version (err, res) =>
           {V8Version, running} = res
@@ -34,10 +37,6 @@ class CodeExec
             @connection.getExecPosition 0, (err, execPosition) =>
               if not err then @codeDisplay.showCurExecLine execPosition
   
-  setCodeDisplay: (@codeDisplay) ->
-    
-  isConnected: -> @connection?
-            
   showPaused: (execPosition)->
     {file, line, column} = execPosition
     @ideView.showRunPause no
@@ -61,53 +60,25 @@ class CodeExec
     @connection?.step type, =>
       @ideView.showRunPause yes
       
-  getPath: (editor) ->
-    path = editor.getPath()
-    if (pathParts = /^([a-z]:)(.*)$/i.exec path)
-      path = pathParts[1].toUpperCase() + pathParts[2]
-    path
-    
-  addBreakpoint: (file, lineIn) ->
-    @connection?.setScriptBreakpoint file, lineIn, (err, res) =>
+  addBreakpoint: (opts, cb) ->
+    @connection?.setScriptBreakpoint opts, (err, res) =>
       if err then @destroy()
       else
-        {breakpoint: id, actual_locations: actualLocations} = res.body
+        {breakpoint: v8Id, actual_locations: actualLocations} = res.body
         for actualLocation in actualLocations
           line   = actualLocation.line
           column = actualLocation.column
           break
-        if line
-          for id, breakpoint of @breakpoints
-            if breakpoint.file is file and
-               breakpoint.line is line
-              @clearbreakpoint id
-              return
-          breakpoint = new Breakpoint @, @codeDisplay, id, file, line, column
-          @breakpoints[id] = breakpoint
-          @codeDisplay.addBreakpoint breakpoint
+      cb? {v8Id, line, column}
 
   changeBreakpoint: (breakpoint) ->
-    {id: breakpoint, enabled, ignoreCount, condition} = breakpoint
+    {v8Id: breakpoint, enabled, ignoreCount, condition} = breakpoint
     args = {breakpoint, enabled, ignoreCount, condition}
     @connection?.changebreakpoint args
                     
-  clearbreakpoint: (breakpointId) -> 
-    @connection?.clearbreakpoint breakpointId
-    @breakpoints[breakpointId].destroy()
-    delete @breakpoints[breakpointId]
+  clearbreakpoint: (breakpoint) -> 
+    @connection?.clearbreakpoint breakpoint.v8Id
 
-  toggleBreakpoint: (editor, line) ->
-    file = @getPath editor
-    for id, breakpoint of @breakpoints
-      if breakpoint.file is file and
-         breakpoint.line is line
-        if breakpoint.enabled
-          breakpoint.setEnabled no
-        else
-          @clearbreakpoint breakpoint.id
-        return
-    @addBreakpoint file, line
-    
   setUpConnectionEvents: ->
     @connection?.onBreak (body) =>
       {script, sourceLine: line, sourceColumn: column} = body
@@ -115,7 +86,7 @@ class CodeExec
       @showPaused {file, line, column}
       
   destroy: ->
-    for id of @breakpoints then @clearbreakpoint id
+    for id, breakpoint of @breakpoints then @clearbreakpoint breakpoint
     @connection?.destroy()
     @ideView.showConnected no
     console.log 'node-ide: disconnected'

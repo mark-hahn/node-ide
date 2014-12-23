@@ -2,7 +2,7 @@
 IdeView = require './ide-view'
 {CompositeDisposable} = require 'atom'
 
-module.exports = NodeIde =
+module.exports =
   config:
     panelOnBottom:
       title: 'Place main IDE panel on bottom instead of top'
@@ -15,7 +15,7 @@ module.exports = NodeIde =
       'node-ide:toggle': => @toggle()
 
   newIdePanel: ->
-    @ideView = new IdeView
+    @ideView = new IdeView @
     idePanelOpts = item: @ideView.getElement(), visible: false
     @idePanel = if atom.config.get 'node-ide.panelOnBottom'
          atom.workspace.addBottomPanel idePanelOpts
@@ -28,6 +28,10 @@ module.exports = NodeIde =
       @ideView.destroy()
       @idePanel.destroy()
       @idePanel = null
+      
+  serialize: -> 
+    @ideView.prepareForSerialize()
+    @state
 
   deactivate: ->
     @ideView.destroy()

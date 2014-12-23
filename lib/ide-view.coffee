@@ -1,8 +1,8 @@
 
 {View}    = require 'atom-space-pen-views'
 
-CodeExec     = require './code-exec'
-CodeDisplay  = require './code-display'
+BreakpointMgr = require './breakpoint-mgr'
+CodeExec      = require './code-exec'
 
 module.exports =
 class IdeView extends View
@@ -18,11 +18,13 @@ class IdeView extends View
         @div outlet:'ideIn',    class:'new-btn octicon ide-step-in'
         @div outlet:'ideOut',   class:'new-btn octicon ide-step-out'
 
-  initialize: ->
+  initialize: (@nodeIde) ->
+    {@state} = @nodeIde
     @subs = []
     process.nextTick =>
       @parent().addClass('ide-tool-panel').show()
       @setupEvents()
+      @breakpointMgr = new BreakpointMgr @
       @showConnected no
       @toggleConnection()
       
@@ -48,17 +50,13 @@ class IdeView extends View
       
   toggleConnection: -> 
     if not @codeExec
-      @codeExec    = new CodeExec @
-      @codeDisplay = new CodeDisplay @
-      @codeExec.setCodeDisplay @codeDisplay
-      @codeDisplay.setCodeExec @codeExec  
+      @codeExec = new CodeExec @
     else 
       @codeExec.destroy()
-      @codeDisplay.destroy()
-      @codeExec = @codeDisplay = null
+      @codeExec = null
       @showConnected no
-    console.log 'toggleConnection', @codeExec?
-    
+    @breakpointMgr.setCodeExec @codeExec
+  
   connClick: ->
     if @codeExec and not @ideConn.hasClass 'connected' 
       @toggleConnection()
@@ -84,10 +82,10 @@ class IdeView extends View
       if @connected then @codeExec?.step 'out'
       false
       
-  serialize: ->
-
   destroy: ->
-    @codeDisplay?.destroy()
     @codeExec?.destroy()
+    @breakpointMgr.destroy()
+    for sub in @subs
+      sub.off?()
+      sub.dispose?()
     @remove()
-

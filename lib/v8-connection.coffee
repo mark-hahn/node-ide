@@ -44,7 +44,10 @@ class V8connection
     if cb then @reqCallbacks[@reqSeq] = cb
     req = {type: 'request', seq: @reqSeq++, command}
     if args then req.arguments = args
-    json = JSON.stringify req 
+    try
+      json = JSON.stringify req 
+    catch
+      debugger
     @socket.write "Content-Length: " + 
                   Buffer.byteLength(json, "utf8") + 
                   "\r\n\r\n" + json
@@ -86,13 +89,10 @@ class V8connection
     args = {stepaction, stepcount}
     @request 'continue', args, -> cb? null
     
-  setScriptBreakpoint: (file, line, cb) ->
-    # console.log 'setScriptBreakpoint', file, line
-    args = {type: 'script', target: file, line, column: 0}
-    @request 'setbreakpoint', args, (err, res) -> 
-      if res.body.type isnt 'scriptName' 
-        cb? @error 'setbreakpoint result not scriptName', res
-      else cb? null, res
+  setScriptBreakpoint: (breakpoint, cb) ->
+    opts = breakpoint.getData()
+    args = _.extend {type: 'script', target: opts.file}, opts
+    @request 'setbreakpoint', args, (err, res) -> cb? null, res
     
   changebreakpoint: (args, cb) ->
     @request 'changebreakpoint', args, -> cb? null, null    

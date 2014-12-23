@@ -5,25 +5,21 @@
 module.exports = 
 class Breakpoint
   
-  constructor: (@codeExec, @codeDisplay, @id, @file, @line, @column) ->
-    @enabled = yes
-    @condition = 'true'
-    @ignoreCount = 0
+  constructor: (@breakpointMgr, args) ->
+    {@file, @line, @column, @enabled, @condition, @ignoreCount} = args
+    @id = @file + '|' + @line + '|' + Date.now()
+    if not @enabled?
+      @enabled = yes
+      @condition = 'true'
+      @ignoreCount = 0
   
-  isReady: -> not @destroyed and @codeExec.isConnected()
+  changeBreakpoint: -> if not @destroyed then @breakpointMgr.changeBreakpoint @
   
-  setEnabled: (@enabled) -> 
-    if @isReady 
-      @codeExec.changeBreakpoint @
-      @codeDisplay.showBreakpointEnabled @, @enabled
-  
-  setCondition:   (@condition)   ->
-    if @isReady then @codeExec.changeBreakpoint @
-    
-  setIgnoreCount: (@ignoreCount) ->
-    if @isReady then @codeExec.changeBreakpoint @
+  setEnabled:     (@enabled)     -> @changeBreakpoint()
+  setCondition:   (@condition)   -> @changeBreakpoint()
+  setIgnoreCount: (@ignoreCount) -> @changeBreakpoint()
       
+  getData: -> {@id, @file, @line, @column, @enabled, @condition, @ignoreCount}
+  
   destroy: ->
     @destroyed = yes
-    @codeDisplay.removeBreakpoint @id
-    
