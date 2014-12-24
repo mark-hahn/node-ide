@@ -10,9 +10,14 @@ module.exports =
       default: false     
       
   activate: (@state) ->
+    console.log 'state1', @state
     @subs = new CompositeDisposable
     @subs.add atom.commands.add 'atom-workspace', 
       'node-ide:toggle': => @toggle()
+      
+    setInterval =>
+      console.log 'state2', @state
+    , 2000
 
   newIdePanel: ->
     @ideView = new IdeView @
@@ -30,7 +35,8 @@ module.exports =
       @idePanel = null
       
   serialize: -> 
-    @ideView.prepareForSerialize()
+    @state.breakpoints = @ideView.allBreakpointData()
+    console.log 'state3', @state
     @state
 
   deactivate: ->

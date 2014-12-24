@@ -99,7 +99,7 @@ class V8connection
     @request 'clearbreakpoint', {breakpoint}
     
   getScriptBreakpoints: (cb) ->
-    @request 'listbreakpoints', null, (err, res) -> cb? null, res
+    @request 'listbreakpoints', null, (err, res) -> cb? err, res
     
   suspend: (cb) -> @request 'suspend',  null, -> cb? null
   resume:  (cb) -> @request 'continue', null, -> cb? null

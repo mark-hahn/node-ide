@@ -18,24 +18,24 @@ class CodeExec
     @breakpoints = state.breakpoints
     
     @ideView.showRunPause no
-    process.nextTick =>
-      @connection = new V8connection @ideView
-      @connection.connect dbgHost, dbgPort, (err) =>
-        if err 
-          @connection = null
-          @ideView.showConnected no
-          return
-        @setUpConnectionEvents()
-        @breakpointMgr.setCodeExec @
-        @codeDisplay = @breakpointMgr.codeDisplay
-        @ideView.showConnected yes
-        @connection.version (err, res) =>
-          {V8Version, running} = res
-          @ideView.showRunPause running
-          console.log 'node-ide: connected to:', dbgHost + ':' + dbgPort + ', V8:' + V8Version
-          if not running
-            @connection.getExecPosition 0, (err, execPosition) =>
-              if not err then @codeDisplay.showCurExecLine execPosition
+    # process.nextTick =>
+    @connection = new V8connection @ideView
+    @connection.connect dbgHost, dbgPort, (err) =>
+      if err 
+        @connection = null
+        @ideView.showConnected no
+        return
+      @setUpConnectionEvents()
+      @breakpointMgr.setCodeExec @
+      @codeDisplay = @breakpointMgr.codeDisplay
+      @ideView.showConnected yes
+      @connection.version (err, res) =>
+        {V8Version, running} = res
+        @ideView.showRunPause running
+        console.log 'node-ide: connected to:', dbgHost + ':' + dbgPort + ', V8:' + V8Version
+        if not running
+          @connection.getExecPosition 0, (err, execPosition) =>
+            if not err then @codeDisplay.showCurExecLine execPosition
   
   showPaused: (execPosition)->
     {file, line, column} = execPosition
@@ -77,8 +77,14 @@ class CodeExec
     args = {breakpoint, enabled, ignoreCount, condition}
     @connection?.changebreakpoint args
                     
-  clearbreakpoint: (breakpoint) -> 
-    @connection?.clearbreakpoint breakpoint.v8Id
+  clearbreakpoint: (breakpoint) ->
+      @connection?.clearbreakpoint breakpoint.v8Id
+    
+  clearAllBreakpoints: ->
+    @connection.getScriptBreakpoints (err, res) =>
+      console.log res
+      for breakpoint in res.body.breakpoints
+        @connection?.clearbreakpoint breakpoint.number
 
   setUpConnectionEvents: ->
     @connection?.onBreak (body) =>
@@ -87,7 +93,7 @@ class CodeExec
       @showPaused {file, line, column}
       
   destroy: ->
-    for id, breakpoint of @breakpoints then @clearbreakpoint breakpoint
+    @codeDisplay.removeCurExecLine()
     @connection?.destroy()
     @ideView.showConnected no
     console.log 'node-ide: disconnected'

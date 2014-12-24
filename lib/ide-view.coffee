@@ -37,7 +37,7 @@ class IdeView extends View
     else
       @ideConn.removeClass 'connected'
       @execButtons.find('.new-btn').addClass 'disabled'
-  
+    
   showRunPause: (running) ->
     if running
       @idePause.css display: 'inline-block'
@@ -81,6 +81,8 @@ class IdeView extends View
     @subs.push @on 'click', '.ide-step-out', (e) => 
       if @connected then @codeExec?.step 'out'
       false
+      
+  allBreakpointData: -> @breakpointMgr.allBreakpointData()
       
   destroy: ->
     @codeExec?.destroy()
