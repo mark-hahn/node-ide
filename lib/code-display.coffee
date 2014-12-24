@@ -2,10 +2,7 @@
    lib/code-display.coffee
 ###
 
-for provider in atom.views.providers
-  if (TextEditor = provider.modelConstructor).name is 'TextEditor'
-    break
-
+{TextEditor} = require 'atom'
 {$} = require 'atom-space-pen-views'
 _   = require 'underscore'
 
@@ -18,43 +15,63 @@ class CodeDisplay
     
     @subs.push atom.workspace.observeActivePaneItem (editor) =>
       if editor instanceof TextEditor 
+        if @curExecPosition and not editor.nodeIdeExecMarker and
+           @getPath(editor) is @curExecPosition?.file
+          @showCurExecLine @curExecPosition
         @setBreakpointsInEditor editor
     
-  findShowEditor: (file, line, cb) ->
-    atom.workspace.open file, searchAllPanes: yes, initialLine: line-1
-      .then (editor) -> cb editor
-      
-  setCursorToLineColDelayed: (editor, line, column) ->
-    if editor is atom.workspace.getActivePaneItem()
-      setTimeout ->
-        editor.setCursorBufferPosition [line, column]
-      , 100
-  
-  showCurExecLine: (curExecPosition, cb) -> 
-    @removeCurExecLine()
-    {file, line, column} = curExecPosition
-    editor = @findShowEditor file, line, (editor) =>
-      @execPosMarker = editor.markBufferPosition [line, column]
-      editor.decorateMarker @execPosMarker, 
-                            type: 'line', class: 'node-ide-exec-line'
-      @setCursorToLineColDelayed editor, line, column
-      cb?()
-      
-  removeCurExecLine: -> 
-    if @execPosMarker
-      @execPosMarker.destroy()
-      @execPosMarker = null
-  
   getPath: (editor) ->
     path = editor.getPath()
     if (pathParts = /^([a-z]:)(.*)$/i.exec path)
       path = pathParts[1].toUpperCase() + pathParts[2]
     path
   
+  findShowEditor: (file, line, cb) ->
+    atom.workspace.open file, searchAllPanes: yes, initialLine: line-1
+      .then (editor) -> cb editor
+      
+  positionVisible: (file, line, column) ->
+    visible = (editor = atom.workspace.getActivePaneItem()) and
+               editor instanceof TextEditor and
+               @getPath(editor) is file
+    if visible then @setCursorToLineColDelayed editor, line, column
+    visible
+      
+  showCurExecLine: (@curExecPosition) ->
+    @removeCurExecLine yes
+    if @curExecPosition
+      {file, line, column} = @curExecPosition
+      showing = @positionVisible file, line, column
+      for editor in atom.workspace.getTextEditors()
+        if @getPath(editor) is file
+          if not showing
+            showing = yes
+            @findShowEditor file, line, (editor) =>
+              @setCursorToLineColDelayed editor, line, column
+          editor.nodeIdeExecMarker = editor.markBufferPosition [line, column]
+          editor.decorateMarker editor.nodeIdeExecMarker, 
+                                type: 'line', class: 'node-ide-exec-line'
+      if not showing
+        @findShowEditor file, line, (editor) =>
+          @setCursorToLineColDelayed editor, line, column 
+      
+  removeCurExecLine: (temp = no) ->
+    if not temp then delete @curExecPosition
+    for editor in atom.workspace.getTextEditors()
+      editor.nodeIdeExecMarker?.destroy()
+      delete editor.nodeIdeExecMarker
+  
   getDecorationData: (breakpoint) ->
-    {enabled} = breakpoint type: 'gutter', class: 'node-ide-breakpoint-' +
-                            (if breakpoint.enabled then 'enabled' else 'disabled')
+    {enabled} = breakpoint 
+    type: 'gutter', class: 'node-ide-breakpoint-' +
+      (if breakpoint.enabled then 'enabled' else 'disabled')
     
+  setCursorToLineColDelayed: (editor, line, column) ->
+    if editor is atom.workspace.getActivePaneItem()
+      setTimeout ->
+        editor.setCursorBufferPosition [line, column]
+      , 100
+  
   setBreakpointsInEditor: (editor) ->
     path = @getPath editor
     editor.nodeIdeDecorations ?= {}
@@ -67,27 +84,37 @@ class CodeDisplay
         editor.nodeIdeDecorations[breakpoint.id] = decoration
   
   showBreakpoint: (breakpoint) ->
-    file   = breakpoint.file
-    line   = breakpoint.line
-    column = breakpoint.column
-    editor = @findShowEditor file, line, (editor) =>
+    {file, line, column} = breakpoint
+    showing = @positionVisible file, line, column    
+    for editor in atom.workspace.getTextEditors()
+      if @getPath(editor) is file
+        if not showing
+          showing = yes
+          @findShowEditor file, line, (editor) =>
+            @setCursorToLineColDelayed editor, line, column
       @setBreakpointsInEditor editor
-      @setCursorToLineColDelayed editor, line, column
+    if not showing
+      @findShowEditor file, line, (editor) =>
+        @setCursorToLineColDelayed editor, line, column 
       
   changeBreakpoint: (breakpoint) ->
     decorationData = @getDecorationData breakpoint
     for editor in atom.workspace.getTextEditors()
-      if (decoration = editor.nodeIdeDecorations[breakpoint.id])
+      if (decoration = editor.nodeIdeDecorations?[breakpoint.id])
         decoration.setProperties decorationData
-        @setCursorToLineColDelayed editor, breakpoint.line, breakpoint.column
   
   removeBreakpoint: (breakpoint) -> 
     for editor in atom.workspace.getTextEditors()
-      if (decoration = editor.nodeIdeDecorations[breakpoint.id])
-        marker = decoration.getMarker()
-        marker.destroy()
+      if (decoration = editor.nodeIdeDecorations?[breakpoint.id])
+        decoration.getMarker().destroy()
         delete editor.nodeIdeDecorations[breakpoint.id]
-        @setCursorToLineColDelayed editor, breakpoint.line, breakpoint.column
+        
+  removeAllBreakpoints: ->
+    for editor in atom.workspace.getTextEditors()
+      if editor.nodeIdeDecorations
+        for id, decoration of editor.nodeIdeDecorations
+          decoration.getMarker().destroy()
+        delete editor.nodeIdeDecorations
 
   setupEvents: ->
     @subs.push $('atom-pane-container').on 'click', '.line-number', (e) =>
@@ -99,11 +126,7 @@ class CodeDisplay
   
   destroy: ->
     @removeCurExecLine()
-    for editor in atom.workspace.getTextEditors()
-      if editor.nodeIdeDecorations
-        for id, decoration of editor.nodeIdeDecorations
-          decoration.getMarker().destroy()
-        delete editor.nodeIdeDecorations
+    @removeAllBreakpoints()
     for sub in @subs
       sub.off?()
       sub.dispose?()

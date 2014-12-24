@@ -51,6 +51,7 @@ class CodeExec
     @codeDisplay.removeCurExecLine()
     @connection?.resume =>
       @ideView.showRunPause yes
+      
   pause: ->
     @connection?.suspend => 
       @connection.getExecPosition 0, (err, execPosition) =>
@@ -60,9 +61,9 @@ class CodeExec
     @connection?.step type, =>
       @ideView.showRunPause yes
       
-  addBreakpoint: (opts, cb) ->
-    @connection?.setScriptBreakpoint opts, (err, res) =>
-      if err then @destroy()
+  addBreakpoint: (breakpoint, cb) ->
+    @connection?.setScriptBreakpoint breakpoint, (err, res) =>
+      if err then cb? {}; return
       else
         {breakpoint: v8Id, actual_locations: actualLocations} = res.body
         for actualLocation in actualLocations

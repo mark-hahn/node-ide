@@ -40,8 +40,9 @@ class V8connection
       if not @connected then cb err.message
 
   request: (command, args, cb) ->
+    console.log 'request', command, @reqSeq, args
     if not @connected then return
-    if cb then @reqCallbacks[@reqSeq] = cb
+    @reqCallbacks[@reqSeq] = cb
     req = {type: 'request', seq: @reqSeq++, command}
     if args then req.arguments = args
     try
@@ -54,7 +55,7 @@ class V8connection
   
   response: (res) ->
     {type, event, command, request_seq, success, message, body} = res.body
-    # console.log 'response', (command ? event), res
+    console.log 'response', (command ? event), request_seq, res
     switch type
       
       when 'event'
@@ -63,14 +64,11 @@ class V8connection
           when 'exception' then for cb in @exceptionCallbacks then cb body
           
       when 'response'
-        if not (cb = @reqCallbacks[request_seq])
-          console.log 'request callback missing', @reqCallbacks, res
-        else
-          args = if not success then [message, null] else [null, res.body]
-          ignoreErr = cb args...
-          delete @reqCallbacks[request_seq]
-          if not success and ignoreErr isnt true
-            @error 'response error:', res
+        if (cb = @reqCallbacks[request_seq])
+          ignoreErr = cb (if not success then [message, null] else [null, res.body])...
+        delete @reqCallbacks[request_seq]
+        if not success and ignoreErr isnt true
+          @error 'response error:', res
         
       else @error 'unknown response:', res
         
