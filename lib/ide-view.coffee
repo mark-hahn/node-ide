@@ -1,8 +1,9 @@
 
-{View}    = require 'atom-space-pen-views'
+{$,View}    = require 'atom-space-pen-views'
 
-BreakpointMgr = require './breakpoint-mgr'
-CodeExec      = require './code-exec'
+BreakpointMgr   = require './breakpoint-mgr'
+CodeExec        = require './code-exec'
+BreakpointPopup = require './breakpoint-popup'
 
 module.exports =
 class IdeView extends View
@@ -11,15 +12,21 @@ class IdeView extends View
     @div class: 'node-ide', =>
       @div class: 'logo', "Node-IDE"
       @div outlet:'ideConn',  class:'new-btn octicon ide-conn'
+      
       @div outlet: 'execButtons', class: 'exec-buttons', =>
         @div outlet:'idePause', class:'new-btn octicon ide-pause'
         @div outlet:'ideRun',   class:'new-btn octicon ide-run'
         @div outlet:'ideOver',  class:'new-btn octicon ide-step-over'
         @div outlet:'ideIn',    class:'new-btn octicon ide-step-in'
         @div outlet:'ideOut',   class:'new-btn octicon ide-step-out'
+      @div class:'btn-separator'
+      @div outlet: 'inspectorButtons', class: 'inspector-buttons', =>
+        @div outlet:'breakBtn', class:'new-btn octicon ide-bp-btn ide-stop'
 
   initialize: (@nodeIde) ->
     {@state} = @nodeIde
+    @breakpointPopup = new BreakpointPopup @
+    
     @subs = []
     process.nextTick =>
       @parent().addClass('ide-tool-panel').show()
@@ -82,11 +89,19 @@ class IdeView extends View
       if @connected then @codeExec?.step 'out'
       false
       
+    @subs.push @on 'click', '.ide-bp-btn', (e) =>
+      if @breakpointPopup.showing
+        @breakpointPopup.hide()
+      else
+        @breakpointPopup.show $(e.target).offset()
+      false
+      
   allBreakpointData: -> @breakpointMgr.allBreakpointData()
       
   destroy: ->
     @codeExec?.destroy()
-    @breakpointMgr.destroy()
+    @breakpointMgr?.destroy()
+    @breakpointPopup?.destroy()
     for sub in @subs
       sub.off?()
       sub.dispose?()

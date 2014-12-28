@@ -19,7 +19,8 @@ class Breakpoint
   setCondition:   (@condition)   -> @changeBreakpoint()
   setIgnoreCount: (@ignoreCount) -> @changeBreakpoint()
       
-  getData: -> {@id, @file, @line, @column, @enabled, @condition, @ignoreCount}
+  getData:  -> {@id, @file, @line, @column, @enabled, @condition, @ignoreCount}
+  updateV8: ({@v8Id, @line, @column}) ->
   
   destroy: ->
     @destroyed = yes

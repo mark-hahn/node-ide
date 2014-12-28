@@ -62,15 +62,19 @@ class CodeExec
       @ideView.showRunPause yes
       
   addBreakpoint: (breakpoint, cb) ->
+    console.log 'addBreakpoint', breakpoint
+    
     @connection?.setScriptBreakpoint breakpoint, (err, res) =>
-      if err then cb? {}; return
-      else
-        {breakpoint: v8Id, actual_locations: actualLocations} = res.body
-        for actualLocation in actualLocations
-          line   = actualLocation.line
-          column = actualLocation.column
-          break
-      cb? {v8Id, line, column}
+      console.log 'setScriptBreakpoint', res
+      if err then cb? err; return
+      {breakpoint: v8Id, actual_locations: actualLocations} = res.body
+      added = no
+      for actualLocation in actualLocations
+        line   = actualLocation.line
+        column = actualLocation.column
+        added = yes
+        break
+      cb? null, {v8Id, line, column, added}
 
   changeBreakpoint: (breakpoint) ->
     {v8Id: breakpoint, enabled, ignoreCount, condition} = breakpoint
@@ -93,7 +97,7 @@ class CodeExec
       @showPaused {file, line, column}
       
   destroy: ->
-    @codeDisplay.removeCurExecLine()
+    @codeDisplay?.removeCurExecLine()
     @connection?.destroy()
     @ideView.showConnected no
     console.log 'node-ide: disconnected'

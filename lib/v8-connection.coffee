@@ -40,6 +40,8 @@ class V8connection
       if not @connected then cb err.message
 
   request: (command, args, cb) ->
+    if args?.breakpoint? and not args.breakpoint then debugger
+    
     console.log 'request', command, @reqSeq, args
     if not @connected then return
     @reqCallbacks[@reqSeq] = cb
