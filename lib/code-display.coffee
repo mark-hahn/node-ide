@@ -16,6 +16,8 @@ class CodeDisplay
       if @curExecPosition and @getPath(editor) is @curExecPosition?.file
          @showCurExecLine @curExecPosition
       @setBreakpointsInEditor editor
+      
+    @setupEvents()
   
   getPath: (editor) ->
     path = editor.getPath()

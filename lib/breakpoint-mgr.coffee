@@ -19,6 +19,7 @@ class BreakpointMgr
     @breakpoints = {}
     for id, breakpoint of state.breakpoints
       @breakpoints[id] = new Breakpoint @, breakpoint
+      console.log 'in', @breakpoints[id].toString()
     state.breakpoints = @breakpoints
     
     @codeDisplay = new CodeDisplay @
@@ -27,7 +28,7 @@ class BreakpointMgr
     if @codeExec
       @codeExec.clearAllBreakpoints()
       fin = 0
-      for id, breakpoint of @breakpoints
+      for id, breakpoint of @breakpoints when not breakpoint.destroyed
         @createBreakpoint breakpoint, => 
           if ++fin is @breakpoints.length
             @setActive      @active
@@ -36,7 +37,7 @@ class BreakpointMgr
         
   createBreakpoint: (breakpoint, cb, file, line, column = 0) -> 
     if (newBreakpoint = file?) 
-      for id, bp of @breakpoints
+      for id, bp of @breakpoints when not bp.destroyed
         if file is bp.file and line is bp.line then return
       breakpoint = new Breakpoint @, {file, line, column}
     else
@@ -60,7 +61,7 @@ class BreakpointMgr
           return
         breakpoint.updateV8 {v8Id, line, column}
         if newBreakpoint
-          for id, bp of @breakpoints
+          for id, bp of @breakpoints when not bp.destroyed
             if file is bp.file and line is bp.line
               failure()
               return
@@ -79,7 +80,7 @@ class BreakpointMgr
     breakpoint.destroy()
     
   toggleBreakpoint: (file, line) ->
-    for id, breakpoint of @breakpoints
+    for id, breakpoint of @breakpoints when not breakpoint.destroyed
       if breakpoint.file is file and
          breakpoint.line is line
         if breakpoint.enabled
@@ -101,7 +102,8 @@ class BreakpointMgr
     
   allBreakpointData: ->
     breakpoints = {}
-    for id, breakpoint of @breakpoints
+    for id, breakpoint of @breakpoints when not breakpoint.destroyed
+      console.log 'out', breakpoint.toString()
       breakpoints[id] = breakpoint.getData()
     {breakpoints, @active, @uncaughtExc, @caughtExc}
     
