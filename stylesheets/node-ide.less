@@ -130,15 +130,109 @@
 .workspace>.ide-view-popup {
   position:absolute;
   display:none;
-  width:auto;
+  width:270px;
+  max-height:70%;
   margin:25px 0 0 -9px;
+  
   .ide-bp-header {
     position:relative;
     top:-5px;
     border-bottom: 1px solid gray;
-    margin-bottom: 3px;
   }
-  .btn {
-    margin-right:3px;
+  .ide-bp-chkboxes{
+    position:relative;
+    top:-2px;
+    height:20px;
+    margin-bottom: 5px;
+    font-size:12px;
+    
+    label {
+      margin-right:10px;
+    }
+    
+    .ide-bp-chk {
+      position:relative;
+      top:2px;
+      margin-right:2px;
+    }
+  }
+  .ide-bp-buttons{
+    .btn {
+      margin-right:8px;
+    }
+  }
+  .ide-bp-list {
+    margin-top:4px;
+    position:relative;
+    overflow-y:scroll;
+    // height:40px;
+    max-height:10%;   // doesn't work !!!
+    // max-height: 80px;
+
+    .ide-bp-list-cover {
+      display:none;
+      position:absolute;
+      top:0;
+      left:0;
+      width:100%;
+      height:100%;
+      background-color:@base-background-color;
+      opacity:0.5;
+    }
+    .ide-list-bp {
+      margin-bottom:5px;
+      max-width:220px;
+      font-size:14px;
+      border:1px solid @button-border-color;
+      margin:5px;
+      background-color:@base-background-color;
+      color: @text-color;
+      padding: 0 6px 0 6px;
+      cursor:pointer;
+      
+      &.enabled {
+        
+      }
+      &.selected {
+        
+      }
+      .ide-list-chk {
+        float:left;
+        width:13px;
+        height:13px;
+        // position:relative;
+        // top:3px;
+      }
+      .ide-list-del {
+        border:1px solid gray;
+        margin-top:1px;
+        padding-left:1px;
+        font-size:12px;
+        line-height:0.9;
+        float:right;
+        width:11px;
+        height:11px;
+        position:relative;
+        top:3px;
+        cursor:default;
+        visibility:hidden;
+      }
+      .ide-list-path {
+        padding-left:6px;
+        font-size:11px;
+      }
+      .ide-list-base-line {
+        display:inline-block;
+        white-space:nowrap;
+      }
+      .ide-list-base {
+        padding-left:6px;
+        font-size:15px;
+      }
+      .ide-list-line {
+        font-size:14px;
+        padding-left:4px;
+      }
+    }
   }
 }

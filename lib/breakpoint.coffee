@@ -9,12 +9,13 @@ class Breakpoint
     {@file, @line, @column, @enabled, @condition, @ignoreCount} = args
     @id = @file + '|' + @line + '|' + Date.now()
     if not @enabled?
-      @enabled = yes
+      @active = @enabled = yes
       @condition = 'true'
       @ignoreCount = 0
   
   changeBreakpoint: -> if not @destroyed then @breakpointMgr.changeBreakpoint @
   
+  setActive:      (@active)      -> @changeBreakpoint()
   setEnabled:     (@enabled)     -> @changeBreakpoint()
   setCondition:   (@condition)   -> @changeBreakpoint()
   setIgnoreCount: (@ignoreCount) -> @changeBreakpoint()

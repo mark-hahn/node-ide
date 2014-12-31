@@ -1,5 +1,6 @@
 
-{$,View}    = require 'atom-space-pen-views'
+{$,View} = require 'atom-space-pen-views'
+{TextEditor} = require 'atom'
 
 BreakpointMgr   = require './breakpoint-mgr'
 CodeExec        = require './code-exec'
@@ -25,13 +26,12 @@ class IdeView extends View
 
   initialize: (@nodeIde) ->
     {@state} = @nodeIde
-    @breakpointPopup = new BreakpointPopup @
-    
     @subs = []
     process.nextTick =>
       @parent().addClass('ide-tool-panel').show()
       @setupEvents()
-      @breakpointMgr = new BreakpointMgr @
+      @breakpointMgr   = new BreakpointMgr   @
+      @breakpointPopup = new BreakpointPopup @breakpointMgr
       @showConnected no
       @toggleConnection()
       

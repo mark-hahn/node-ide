@@ -18,13 +18,16 @@ class V8connection
     @closeCallbacks     = []
     @endCallbacks       = []
     @connected          = no
+    @connectPending     = yes
     
   connect: (host, port, cb) ->
     protocol = new Protocol()
+    
     protocol.onResponse = (res) => process.nextTick =>  
       if res.headers.Type is 'connect'
         # console.log '\n------------------- v8 connect -------------------'
         @connected = yes
+        @connectPending = no
         @ideView.showConnected yes
         cb null, res
       else 
@@ -40,12 +43,15 @@ class V8connection
       if not @connected then cb err.message
 
   request: (command, args, cb) ->
-    if args?.breakpoint? and not args.breakpoint then debugger
+    # if command is 'changebreakpoint' then debugger
     
-    console.log 'request', command, @reqSeq, args
-    if not @connected then return
+    ok = @connected or @connectPending
+    console.log 'request', command, ok, @reqSeq, args
+    if args?.breakpoint? and not args.breakpoint then debugger
+    if not ok then return
+
     @reqCallbacks[@reqSeq] = cb
-    req = {type: 'request', seq: @reqSeq++, command}
+    req = {type: 'request', seq: @reqSeq, command}
     if args then req.arguments = args
     try
       json = JSON.stringify req 
@@ -54,6 +60,7 @@ class V8connection
     @socket.write "Content-Length: " + 
                   Buffer.byteLength(json, "utf8") + 
                   "\r\n\r\n" + json
+    @reqSeq++
   
   response: (res) ->
     {type, event, command, request_seq, success, message, body} = res.body
@@ -98,11 +105,14 @@ class V8connection
     @request 'changebreakpoint', args, -> cb? null, null    
   
   clearbreakpoint: (breakpoint) ->
-    @request 'clearbreakpoint', {breakpoint}
+    @request 'clearbreakpoint', {breakpoint}, -> yes
     
   getScriptBreakpoints: (cb) ->
     @request 'listbreakpoints', null, (err, res) -> cb? err, res
     
+  setExceptionBreak: -> (type, enabled) ->
+    @request 'setexceptionbreak', {type, enabled}
+  
   suspend: (cb) -> @request 'suspend',  null, -> cb? null
   resume:  (cb) -> @request 'continue', null, -> cb? null
   

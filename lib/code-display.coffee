@@ -11,14 +11,12 @@ class CodeDisplay
   
   constructor: (@breakpointMgr) ->
     @subs = []
-    @setupEvents()
     
-    # @subs.push atom.workspace.observeActivePaneItem (editor) =>
-    #   if editor instanceof TextEditor 
-    #     if @curExecPosition and @getPath(editor) is @curExecPosition?.file
-    #        @showCurExecLine @curExecPosition, editor
-    #     @setBreakpointsInEditor editor
-    
+    atom.workspace.observeTextEditors (editor) =>
+      if @curExecPosition and @getPath(editor) is @curExecPosition?.file
+         @showCurExecLine @curExecPosition
+      @setBreakpointsInEditor editor
+  
   getPath: (editor) ->
     path = editor.getPath()
     if (pathParts = /^([a-z]:)(.*)$/i.exec path)
@@ -43,7 +41,8 @@ class CodeDisplay
       $execLineNumber.append \
         '<div class="ide-exec-pos">&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;</div>'
       
-  showCurExecLine: (@curExecPosition) ->
+  showCurExecLine: (execPosition) ->
+    if execPosition then @curExecPosition = execPosition
     @removeCurExecLine yes
     if @curExecPosition
       {file, line, column} = @curExecPosition
@@ -61,53 +60,66 @@ class CodeDisplay
   
   setBreakpointsInEditor: (editor) ->
     path = @getPath editor
-    editor.nodeIdeBreakpoints ?= {}
+    $editor = $ atom.views.getView editor
+    $editor.find('.ide-breakpoint').remove()
     for id, breakpoint of @breakpointMgr.breakpoints
       if breakpoint.file is path
-        if not ($bp = editor.nodeIdeBreakpoints[id])
-          {line, column} = breakpoint
+        {line, column} = breakpoint
+        if not (($line = $editor.find('.line-number[data-buffer-row="' + 
+                                      line + '"]')).length and
+                ($bp = $line.find('.ide-breakpoint')).length)
           $bp = $ '<div class="ide-breakpoint"></div>'
-          $editor = $ atom.views.getView editor
-          $execLineNumber = $editor.find '.line-number-' + line
-          $execLineNumber.append $bp
-          editor.nodeIdeBreakpoints[id] = $bp
+          if $line.length then $line.append $bp
         if breakpoint.enabled then $bp.addClass 'enabled'
         else $bp.removeClass 'enabled'
     null
+
+  setAllBreakpoints: ->
+    for editor in atom.workspace.getTextEditors()
+      @setBreakpointsInEditor editor
     
   showBreakpoint: (breakpoint) ->
     {file, line, column} = breakpoint
     @findShowEditor file, line, (editor) =>
       editor.unfoldBufferRow line
-      @setBreakpointsInEditor editor
+      @setAllBreakpoints()
       @setCursorToLineColDelayed editor, line, column
-      for editor in atom.workspace.getTextEditors()
-        if @getPath(editor) is file
-          @setBreakpointsInEditor editor
       null
       
   changeBreakpoint: (breakpoint) ->
     for editor in atom.workspace.getTextEditors()
-      if ($bp = editor.nodeIdeBreakpoints[breakpoint.id])
-        if breakpoint.enabled then $bp.addClass 'enabled'
-        else $bp.removeClass 'enabled'
+      $editor = $ atom.views.getView editor
+      $editor.find('.ide-breakpoint').each (i, ele) =>
+        $bp = $ ele
+        if +$bp.closest('.line-number').attr('data-buffer-row') is
+           breakpoint.line
+          if breakpoint.enabled and breakpoint.active
+               $bp.addClass    'enabled'
+          else $bp.removeClass 'enabled'
     null
     
   removeBreakpoint: (breakpoint) -> 
-    id = breakpoint.id
     for editor in atom.workspace.getTextEditors()
-      if ($bp = editor.nodeIdeBreakpoints[id])
-        $bp.remove()
-        delete editor.nodeIdeBreakpoints[id]
+      $editor = $ atom.views.getView editor
+      $editor.find('.ide-breakpoint').each (i, ele) =>
+        $bp = $ ele
+        if +$bp.closest('.line-number').attr('data-buffer-row') is
+           breakpoint.line
+          $bp.remove()
     null    
-    
+
   removeAllBreakpoints: ->
     for editor in atom.workspace.getTextEditors()
-      if editor.nodeIdeBreakpoints
-        for id, $bp of editor.nodeIdeBreakpoints
-          $bp.remove()
-          delete editor.nodeIdeBreakpoints[id]
+      $editor = $ atom.views.getView editor
+      $editor.find('.ide-breakpoint').remove()
     null
+    
+  showAll: (execPosition, fromEditor) ->
+    if not fromEditor
+      setTimeout =>
+        @setAllBreakpoints()
+        @showCurExecLine execPosition
+      , 50
 
   setupEvents: ->
     @subs.push $('atom-pane-container').on 'click', '.line-number', (e) =>
@@ -116,6 +128,9 @@ class CodeDisplay
       line = +$tgt.closest('.line-number').attr 'data-buffer-row'
       @breakpointMgr.toggleBreakpoint file, line
     false
+    
+    @subs.push $('.workspace .gutter .icon-right').on 'click', => @showAll()
+    @subs.push $('.workspace .lines .fold-marker').on 'click', => @showAll()
   
   destroy: ->
     @removeCurExecLine()
