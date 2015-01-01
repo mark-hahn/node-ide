@@ -16,10 +16,14 @@ class BreakpointMgr
     state.caughtExc   ?= no
     {@active, @uncaughtExc, @caughtExc} = state
     
+    console.log 'state in', state
+    
     @breakpoints = {}
-    for id, breakpoint of state.breakpoints
-      @breakpoints[id] = new Breakpoint @, breakpoint
-      console.log 'in', @breakpoints[id].toString()
+    for __, breakpoint of state.breakpoints
+      breakpoint.active = @active
+      newBp = new Breakpoint @, breakpoint
+      @breakpoints[newBp.id] = newBp
+      console.log 'new Breakpoint', newBp.toString()
     state.breakpoints = @breakpoints
     
     @codeDisplay = new CodeDisplay @
@@ -37,33 +41,38 @@ class BreakpointMgr
         
   createBreakpoint: (breakpoint, cb, file, line, column = 0) -> 
     if (newBreakpoint = file?) 
-      for id, bp of @breakpoints when not bp.destroyed
-        if file is bp.file and line is bp.line then return
-      breakpoint = new Breakpoint @, {file, line, column}
+      for __, bp of @breakpoints when not bp.destroyed
+        if file is bp.file and line is bp.line 
+          cb? 'duplicate'
+          return
+      breakpoint = new Breakpoint @, 
+                    {file, line, column, active: @ideView.state.active}
     else
       {file, line, column} = breakpoint
       column ?= 0
       
-    failure = =>
-      @codeExec.clearbreakpoint breakpoint
+    failure = (msg) =>
+      @codeExec?.clearbreakpoint breakpoint
       breakpoint.destroy()
-      cb? 'failed'
+      @ideView.breakpointPopup.update()
+      cb? msg
       
     success = =>
       if newBreakpoint then @breakpoints[breakpoint.id] = breakpoint
       @codeDisplay.showBreakpoint breakpoint
+      @ideView.breakpointPopup.update()
       cb? null
       
     if @codeExec
       @codeExec.addBreakpoint breakpoint, (err, {v8Id, line, column, added}) =>
         if err or not added
-          failure()
+          failure 'not added'
           return
         breakpoint.updateV8 {v8Id, line, column}
         if newBreakpoint
           for id, bp of @breakpoints when not bp.destroyed
             if file is bp.file and line is bp.line
-              failure()
+              failure 'moved to duplicate'
               return
         success()
       return
@@ -72,12 +81,17 @@ class BreakpointMgr
   changeBreakpoint: (breakpoint) ->
     @codeDisplay.changeBreakpoint breakpoint
     @codeExec?.changeBreakpoint   breakpoint
+    @ideView.breakpointPopup.update()
+    
+  showBreakpoint: (breakpoint) ->
+    @codeDisplay.showBreakpoint breakpoint
     
   removeBreakpoint: (breakpoint) ->
     @codeDisplay.removeBreakpoint breakpoint
     @codeExec?.clearbreakpoint    breakpoint
     delete @breakpoints[breakpoint.id]
     breakpoint.destroy()
+    @ideView.breakpointPopup.update()
     
   toggleBreakpoint: (file, line) ->
     for id, breakpoint of @breakpoints when not breakpoint.destroyed
@@ -85,20 +99,30 @@ class BreakpointMgr
          breakpoint.line is line
         if breakpoint.enabled
           breakpoint.setEnabled no
+          @ideView.breakpointPopup.update()
         else
           @removeBreakpoint breakpoint
         return
+    if not @active then @setActive yes
     @createBreakpoint null, null, file, line
     
   setActive: (@active) ->
-    for id, breakpoint of @breakpoints 
+    for id, breakpoint of @breakpoints when not breakpoint.destroyed 
       breakpoint.setActive @active
+    @ideView.breakpointPopup.setActive @active
+    
   setUncaughtExc: (@uncaughtExc) -> @codeExec?.setUncaughtExc @uncaughtExc
   setCaughtExc  : (@caughtExc)   -> @codeExec?.setCaughtExc   @caughtExc
     
-  enableAll:  -> for id, breakpoint of @breakpoints then breakpoint.setEnabled yes
-  disableAll: -> for id, breakpoint of @breakpoints then breakpoint.setEnabled no
-  deleteAll:  -> for id, breakpoint of @breakpoints then @removeBreakpoint breakpoint
+  enableAll:  -> 
+    for id, breakpoint of @breakpoints then breakpoint.setEnabled yes
+    @ideView.breakpointPopup.update()
+  disableAll: -> 
+    for id, breakpoint of @breakpoints then breakpoint.setEnabled no
+    @ideView.breakpointPopup.update()
+  deleteAll:  -> 
+    for id, breakpoint of @breakpoints then @removeBreakpoint breakpoint
+    @ideView.breakpointPopup.update()
     
   allBreakpointData: ->
     breakpoints = {}

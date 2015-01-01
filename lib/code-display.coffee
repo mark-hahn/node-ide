@@ -72,7 +72,8 @@ class CodeDisplay
                 ($bp = $line.find('.ide-breakpoint')).length)
           $bp = $ '<div class="ide-breakpoint"></div>'
           if $line.length then $line.append $bp
-        if breakpoint.enabled then $bp.addClass 'enabled'
+        if breakpoint.enabled and breakpoint.active
+             $bp.addClass    'enabled'
         else $bp.removeClass 'enabled'
     null
 

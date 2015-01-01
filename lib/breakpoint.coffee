@@ -2,17 +2,20 @@
   lib/breakpoint.coffee
 ###
 
+crypto = require 'crypto'
+
 module.exports = 
 class Breakpoint
   
   constructor: (@breakpointMgr, args) ->
-    {@file, @line, @column, @enabled, @condition, @ignoreCount} = args
-    @id = @file[-10..-1] + '|' + @line + '|' + Date.now()
-    if not @enabled?
+    {@file, @line, @column, @active, @enabled, @condition, @ignoreCount} = args
+    idPlainTxt = @file + '|' + @line + '|' + Date.now()
+    @id = crypto.createHash('md5').update(idPlainTxt).digest 'hex'
+    if not @ignoreCount?
       @active = @enabled = yes
       @condition = null
       @ignoreCount = 0
-  
+      
   changeBreakpoint: -> if not @destroyed then @breakpointMgr.changeBreakpoint @
   
   setActive:      (@active)      -> @changeBreakpoint()

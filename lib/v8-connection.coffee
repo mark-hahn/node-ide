@@ -43,10 +43,10 @@ class V8connection
       if not @connected then cb err.message
 
   request: (command, args, cb) ->
-    # if command is 'changebreakpoint' then debugger
-    
     ok = @connected or @connectPending
+    
     console.log 'request', command, ok, @reqSeq, args
+    
     if args?.breakpoint? and not args.breakpoint then debugger
     if not ok then return
 
@@ -64,7 +64,7 @@ class V8connection
   
   response: (res) ->
     {type, event, command, request_seq, success, message, body} = res.body
-    console.log 'response', (command ? event), request_seq, res
+    # console.log 'response', (command ? event), request_seq, res
     switch type
       
       when 'event'

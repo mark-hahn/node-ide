@@ -32,23 +32,29 @@ class CodeExec
         console.log 'node-ide: connected to', 
                      state.host + ':' + state.port + ', V8:' + V8Version
         if not running
-          @connection.getExecPosition 0, (err, execPosition) =>
-            if not err then @codeDisplay.showCurExecLine execPosition
+          @connection.getExecPosition 0, (err, @execPosition) =>
+            if not err then @codeDisplay.showCurExecLine @execPosition
   
-  showPaused: (execPosition)->
-    {file, line, column} = execPosition
+  showPaused: (@execPosition)->
+    {file, line, column} = @execPosition
     @ideView.showRunPause no
     if not fs.existsSync file
       console.log 'node-ide: file without source:', file
       @codeDisplay.removeCurExecLine()
       @step 'out'
+      @execPosition = null
       return
     @codeDisplay.showAll {file, line, column}
-      
+    @ideView.breakpointPopup.update()
+    
+  getExecPosition: -> @execPosition
+    
   run: ->
     @codeDisplay.removeCurExecLine()
     @connection?.resume =>
       @ideView.showRunPause yes
+      @execPosition = null
+      @ideView.breakpointPopup.update()
       
   pause: ->
     @connection?.suspend => 
@@ -72,7 +78,8 @@ class CodeExec
       cb? null, {v8Id, line, column, added}
 
   changeBreakpoint: (breakpoint) ->
-    {v8Id: breakpoint, enabled, ignoreCount, condition} = breakpoint
+    {v8Id: breakpoint, enabled, ignoreCount, condition, active} = breakpoint
+    enabled and= active
     args = {breakpoint, enabled, ignoreCount, condition}
     @connection?.changebreakpoint args
                     
