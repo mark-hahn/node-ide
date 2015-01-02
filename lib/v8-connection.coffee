@@ -69,7 +69,7 @@ class V8connection
       
       when 'event'
         switch event
-          when 'break'     then for cb in @breakCallbacks     then cb body
+          when 'break'     then for cb in @breakCallbacks then cb body
           when 'exception' then for cb in @exceptionCallbacks then cb body
           
       when 'response'
@@ -110,8 +110,16 @@ class V8connection
   getScriptBreakpoints: (cb) ->
     @request 'listbreakpoints', null, (err, res) -> cb? err, res
     
-  setExceptionBreak: -> (type, enabled) ->
+  setExceptionBreak: (type, enabled) ->
     @request 'setexceptionbreak', {type, enabled}
+    
+  getScriptSrc: (scriptId, filter, cb) ->
+    args =
+      types: 7
+      ids: [scriptId]
+      includeSource: yes
+      filter: filter
+    @request 'scripts', args, (err, res) -> cb? err, res.body
   
   suspend: (cb) -> @request 'suspend',  null, -> cb? null
   resume:  (cb) -> @request 'continue', null, -> cb? null
@@ -124,7 +132,7 @@ class V8connection
     @request 'frame', {number}, (err, res) -> 
       cb err, res
       if err is 'No frames' then return true
-      
+  
   getExecPosition: (number, cb) ->
     @frame number, (err, res) =>
       if err then cb err; return

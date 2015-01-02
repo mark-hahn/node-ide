@@ -38,11 +38,20 @@ class CodeDisplay
   addCurExecPosDiv: (editor, line, column) ->
     editor.unfoldBufferRow line
     $editor = $ atom.views.getView editor
-    $execLineNumber = $editor.find '.line-number-' + line
-    if not ($execIcon = $execLineNumber.find '.ide-exec-pos').length
-      $execLineNumber.append \
-        '<div class="ide-exec-pos">&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;</div>'
-      
+    maxTries = 0
+    do tryOne = =>
+      $execLineNumber = $editor.find '.line-number-' + line
+      if not $execLineNumber.length
+        if ++maxTries < 30 
+          setTimeout tryOne, 100
+        else
+          console.log 'addCurExecPosDiv failed', $execLineNumber.length, line
+        return
+      console.log 'addCurExecPosDiv', $execLineNumber.length, line
+      if not ($execIcon = $execLineNumber.find '.ide-exec-pos').length
+        $execLineNumber.append \
+          '<div class="ide-exec-pos">&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;</div>'
+
   showCurExecLine: (execPosition) ->
     if execPosition then @curExecPosition = execPosition
     @removeCurExecLine yes

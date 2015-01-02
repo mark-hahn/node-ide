@@ -28,10 +28,15 @@ class BreakpointPopup
         @div class: 'ide-bp-list-cover'
       
   constructor: (@breakpointMgr) ->
-    @subs          = []
-    @$popup        = $$ BreakpointPopup.popup
-    @$activeChkBox = @$popup.find '.ide-active-chk'
-    if @breakpointMgr.active then @$activeChkBox.attr checked: yes
+    @subs            = []
+    @$popup          = $$ BreakpointPopup.popup
+    @$activeChkBox   = @$popup.find '.ide-active-chk'
+    @$uncaughtChkBox = @$popup.find '.ide-uncaught-chk'
+    @caughtChkBox    = @$popup.find '.ide-caught-chk'
+    if @breakpointMgr.active      then @$activeChkBox.attr   checked: yes
+    if @breakpointMgr.uncaughtExc then @$uncaughtChkBox.attr checked: yes
+    if @breakpointMgr.caughtExc   then @caughtChkBox.attr    checked: yes
+
     @$ideBpList = @$popup.find '.ide-bp-list'
     @$popup.appendTo $ '.workspace'
     @setupEvents()
@@ -101,13 +106,13 @@ class BreakpointPopup
   activeClick: (e) ->
     @breakpointMgr.setActive $(e.target).is ':checked'
     
-  setUncaughtExc: (e) ->
-    set = $(e.target).is ':checked'
+  setUncaughtExc: (e, set) ->
+    set ?= $(e.target).is ':checked'
     if not @dontSetUncaughtExc
       @breakpointMgr.setUncaughtExc set
     
-  setCaughtExc: (e) ->
-    set = $(e.target).is ':checked'
+  setCaughtExc: (e, set) ->
+    set ?= $(e.target).is ':checked'
     @breakpointMgr.setCaughtExc set
     if set 
       @dontSetUncaughtExc = yes 

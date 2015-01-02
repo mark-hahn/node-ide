@@ -25,7 +25,7 @@ class IdeView extends View
         @div outlet:'breakBtn', class:'new-btn octicon ide-bp-btn ide-stop'
 
   initialize: (@nodeIde) ->
-    {@state} = @nodeIde
+    {@state, @internalFileDir} = @nodeIde
     @subs = []
     process.nextTick =>
       @parent().addClass('ide-tool-panel').show()
@@ -34,6 +34,9 @@ class IdeView extends View
       @breakpointPopup = new BreakpointPopup @breakpointMgr
       @showConnected no
       @toggleConnection()
+      
+      @breakpointPopup.setUncaughtExc null, @state.uncaughtExc
+      @breakpointPopup.setCaughtExc   null, @state.caughtExc
       
   getElement: -> @
   

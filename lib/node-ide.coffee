@@ -1,6 +1,7 @@
 
 IdeView = require './ide-view'
 {CompositeDisposable} = require 'atom'
+fs = require 'fs-plus'
 
 module.exports =
   config:
@@ -10,6 +11,10 @@ module.exports =
       default: false     
       
   activate: (@state) ->
+    @internalFileDir = 
+      require('path').join fs.getHomeDirectory(), '.nodeIde'
+    fs.makeTreeSync @internalFileDir
+
     @subs = new CompositeDisposable
     @subs.add atom.commands.add 'atom-workspace', 
       'node-ide:toggle': => @toggle()

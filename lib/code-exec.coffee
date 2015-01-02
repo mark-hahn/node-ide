@@ -4,6 +4,7 @@
 
 _            = require 'underscore'
 fs           = require 'fs'
+path         = require 'path'
 Breakpoint   = require './breakpoint'
 V8connection = require './v8-connection'
 
@@ -11,7 +12,7 @@ module.exports =
 class CodeExec
   
   constructor: (@ideView) ->
-    {state, @breakpointMgr} = @ideView
+    {state, @breakpointMgr, @internalFileDir} = @ideView
     state.host ?= '127.0.0.1'
     state.port ?= 5858
     
@@ -35,17 +36,39 @@ class CodeExec
           @connection.getExecPosition 0, (err, @execPosition) =>
             if not err then @codeDisplay.showCurExecLine @execPosition
   
-  showPaused: (@execPosition)->
+  noSource: (file) ->
+    console.log 'node-ide: unable to get source for ', file
+    @codeDisplay.removeCurExecLine()
+    @execPosition = null
+    @step 'out'    
+    
+  haveSource: (source, fileIn, line, column) ->
+    if source and fileIn
+      file = @getInternalPath fileIn
+      fs.writeFileSync file, source
+    else if not source then @noSource fileIn; return
+    @codeDisplay.showAll {file, line, column}
+    @ideView.breakpointPopup.update()
+  
+  getInternalPath: (file) ->
+    ext  = path.extname file
+    name = path.basename(file)[0...-ext.length]
+    path.join @internalFileDir, '(' + name + ')' + ext
+    
+  paused: (@execPosition, scriptId)->
     {file, line, column} = @execPosition
     @ideView.showRunPause no
     if not fs.existsSync file
-      console.log 'node-ide: file without source:', file
-      @codeDisplay.removeCurExecLine()
-      @step 'out'
-      @execPosition = null
+      if /\/|\\/.test file then @noSource file; return
+      fileArg = (if not scriptId then file)
+      @connection?.getScriptSrc scriptId, fileArg, (err, scripts) =>
+        if err or scripts.length is 0 then @noSource file; return
+        {source} = scripts[0]
+        console.log 'paused source.length', source.length, file, line
+        @haveSource source, file, line, column
+        return
       return
-    @codeDisplay.showAll {file, line, column}
-    @ideView.breakpointPopup.update()
+    @haveSource yes
     
   getExecPosition: -> @execPosition
     
@@ -59,7 +82,7 @@ class CodeExec
   pause: ->
     @connection?.suspend => 
       @connection.getExecPosition 0, (err, execPosition) =>
-        if not err then @showPaused execPosition
+        if not err then @paused execPosition
     
   step: (type) ->
     @connection?.step type, =>
@@ -93,14 +116,18 @@ class CodeExec
       for breakpoint in res.body.breakpoints
         @connection?.clearbreakpoint breakpoint.number
         
-  setCaughtExc:   (set) -> @connection.setExceptionBreak 'all',       set
-  setUncaughtExc: (set) -> @connection.setExceptionBreak 'uncaught',  set
+  setCaughtExc:   (set) -> @connection?.setExceptionBreak 'all',       set
+  setUncaughtExc: (set) -> @connection?.setExceptionBreak 'uncaught',  set
 
   setUpEvents: ->
     @connection?.onBreak (body) =>
       {script, sourceLine: line, sourceColumn: column} = body
-      file = script.name 
-      @showPaused {file, line, column}
+      @paused {file:script.name, line, column}, script.id
+      
+    @connection?.onException (body) =>
+      console.log 'exception:', body.exception.text, '\n', body
+      {script, sourceLine: line, sourceColumn: column} = body
+      @paused {file:script.name, line, column}, script.id
       
   destroy: ->
     @codeDisplay?.removeCurExecLine()
