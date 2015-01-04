@@ -42,14 +42,6 @@ class CodeExec
     @execPosition = null
     @step 'out'    
     
-  haveSource: (source, fileIn, line, column) ->
-    if source and fileIn
-      file = @getInternalPath fileIn
-      fs.writeFileSync file, source
-    else if not source then @noSource fileIn; return
-    @codeDisplay.showAll {file, line, column}
-    @ideView.breakpointPopup.update()
-  
   getInternalPath: (file) ->
     ext  = path.extname file
     name = path.basename(file)[0...-ext.length]
@@ -58,17 +50,19 @@ class CodeExec
   paused: (@execPosition, scriptId)->
     {file, line, column} = @execPosition
     @ideView.showRunPause no
+    if not /\/|\\/.test file 
+      file = @getInternalPath file
     if not fs.existsSync file
-      if /\/|\\/.test file then @noSource file; return
       fileArg = (if not scriptId then file)
       @connection?.getScriptSrc scriptId, fileArg, (err, scripts) =>
         if err or scripts.length is 0 then @noSource file; return
         {source} = scripts[0]
         console.log 'paused source.length', source.length, file, line
-        @haveSource source, file, line, column
+        fs.writeFileSync file, source
+        @breakpointMgr.showAll file, line, column
         return
       return
-    @haveSource yes
+    @breakpointMgr.showAll file, line, column
     
   getExecPosition: -> @execPosition
     
@@ -85,6 +79,7 @@ class CodeExec
         if not err then @paused execPosition
     
   step: (type) ->
+    @didstep = yes
     @connection?.step type, =>
       @ideView.showRunPause yes
       

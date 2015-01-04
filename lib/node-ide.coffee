@@ -2,6 +2,7 @@
 IdeView = require './ide-view'
 {CompositeDisposable} = require 'atom'
 fs = require 'fs-plus'
+pathUtil = require 'path'
 
 module.exports =
   config:
@@ -12,7 +13,7 @@ module.exports =
       
   activate: (@state) ->
     @internalFileDir = 
-      require('path').join fs.getHomeDirectory(), '.nodeIde'
+      pathUtil.join fs.getHomeDirectory(), '.nodeIde'
     fs.makeTreeSync @internalFileDir
 
     @subs = new CompositeDisposable

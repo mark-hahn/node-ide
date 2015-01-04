@@ -111,9 +111,15 @@ class BreakpointMgr
       breakpoint.setActive @active
     @ideView.breakpointPopup.setActive @active
     
-  setUncaughtExc: (@uncaughtExc) -> @codeExec?.setUncaughtExc @uncaughtExc
-  setCaughtExc  : (@caughtExc)   -> @codeExec?.setCaughtExc   @caughtExc
+  setUncaughtExc: (@uncaughtExc) -> 
+    @codeExec?.setUncaughtExc @uncaughtExc
+  setCaughtExc  : (@caughtExc)   -> 
+    @codeExec?.setCaughtExc   @caughtExc
     
+  showAll: (file, line, column) ->
+    @codeDisplay.showAll {file, line, column}
+    @ideView.breakpointPopup.update()
+  
   enableAll:  -> 
     for id, breakpoint of @breakpoints then breakpoint.setEnabled yes
     @ideView.breakpointPopup.update()
