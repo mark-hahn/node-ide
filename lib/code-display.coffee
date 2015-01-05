@@ -64,21 +64,21 @@ class CodeDisplay
       (if breakpoint.enabled then 'enabled' else 'disabled')
       
   removeBreakpointsFromEditor: (editor) ->
-    if editor.nodeIdeDecorations
-      for id, decoration of editor.nodeIdeDecorations
+    if editor.nodeIdeBreakpoints
+      for id, decoration of editor.nodeIdeBreakpoints
         decoration.getMarker()?.destroy()
-      delete editor.nodeIdeDecorations
+      delete editor.nodeIdeBreakpoints
   
   setBreakpointsInEditor: (editor) ->
     path = @getPath editor
     @removeBreakpointsFromEditor editor
-    editor.nodeIdeDecorations = {}
+    editor.nodeIdeBreakpoints = {}
     for id, breakpoint of @breakpointMgr.breakpoints
-      if breakpoint.file is path and not editor.nodeIdeDecorations[id]
+      if breakpoint.file is path and not editor.nodeIdeBreakpoints[id]
         {line, column} = breakpoint
         marker = editor.markBufferPosition [line, column]
         decoration = editor.decorateMarker marker, @getDecorationData breakpoint
-        editor.nodeIdeDecorations[id] = decoration
+        editor.nodeIdeBreakpoints[id] = decoration
     null
     
   setAllBreakpoints: ->

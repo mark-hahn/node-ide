@@ -105,11 +105,13 @@ class BreakpointPopup
     
   activeClick: (e) ->
     @breakpointMgr.setActive $(e.target).is ':checked'
+    false
     
   setUncaughtExc: (e, set) ->
     set ?= $(e.target).is ':checked'
     if not @dontSetUncaughtExc
       @breakpointMgr.setUncaughtExc set
+    false
     
   setCaughtExc: (e, set) ->
     set ?= $(e.target).is ':checked'
@@ -118,20 +120,24 @@ class BreakpointPopup
       @dontSetUncaughtExc = yes 
       @$popup.find('.ide-uncaught-chk').attr checked: yes
       @dontSetUncaughtExc = no 
+    false
 
   setEnblBp: (e) -> 
     enbld = $(e.target).is ':checked'
     @getBreakpoint(e).setEnabled enbld; false
+    false
       
   showBp: (e) -> 
     if e.target.tagName isnt 'INPUT'
       @breakpointMgr.showBreakpoint @getBreakpoint e; false
+    false
     
   deleteBp: (e) -> @breakpointMgr.removeBreakpoint @getBreakpoint e; false
     
   setDelVisible: (e, vis) ->
     $(e.target).find('.ide-list-del')
                .css visibility: (if vis then 'visible' else 'hidden')
+    false
                
   setupEvents: ->
     @subs.push @$popup.on 'change', '.ide-active-chk',   (e) => @activeClick    e

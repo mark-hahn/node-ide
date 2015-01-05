@@ -64,7 +64,7 @@ class V8connection
   
   response: (res) ->
     {type, event, command, request_seq, success, message, body} = res.body
-    # console.log 'response', (command ? event), request_seq, res
+    console.log 'response', (command ? event), request_seq, res
     switch type
       
       when 'event'
