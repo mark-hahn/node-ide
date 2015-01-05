@@ -5,22 +5,26 @@
 
 .workspace .ide-tool-panel {
   z-index:10;
-}
+}  
 .line-numbers .line-number.node-ide-breakpoint-enabled .icon-right {
   &:before{content: @stop}
   display: inline-block;
   visibility: visible;
-  color: red; // rgba(0, 0, 256, 0.25);
+  color: red;
 }
 .line-numbers .line-number.node-ide-breakpoint-disabled .icon-right {
   &:before{content: @stop}
   display: inline-block;
   visibility: visible;
-  color: gray; // rgba(0, 0, 256, 0.25);
+  color: gray;
 }
-.node-ide-exec-line {
-  background-color: rgba(0, 0, 256, 0.25) !important;
+atom-text-editor .gutter.git-diff-icon .line-number.node-ide-exec-line, 
+atom-text-editor::shadow .gutter.git-diff-icon .line-number.node-ide-exec-line {
+  background: radial-gradient(@syntax-background-color, @syntax-background-color, red);
+  border: 2px solid red;
+  border-radius: 0 100% 100% 0;
 }
+
 .workspace .node-ide {
   width:100%;
   background-color: @syntax-background-color;
