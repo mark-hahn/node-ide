@@ -2,9 +2,10 @@
    lib/code-display.coffee
 ###
 
-{TextEditor} = require 'atom'
-{$} = require 'atom-space-pen-views'
-_   = require 'underscore'
+{TextEditor}    = require 'atom'
+{$}             = require 'atom-space-pen-views'
+_               = require 'underscore'
+# GutterComponent = require './gutter-component.coffee'
 
 module.exports =
 class CodeDisplay
@@ -13,12 +14,11 @@ class CodeDisplay
     @subs = []
     
     atom.workspace.observeTextEditors (editor) =>
-      if @curExecPosition and @getPath(editor) is @curExecPosition?.file
-         @showCurExecLine @curExecPosition
+      if @getPath(editor) is @curExecPosition?.file then @showCurExecLine()
       @setBreakpointsInEditor editor
-      
+
     @setupEvents()
-  
+    
   getPath: (editor) ->
     path = editor.getPath()
     if (pathParts = /^([a-z]:)(.*)$/i.exec path)
@@ -35,61 +35,57 @@ class CodeDisplay
         editor.setCursorBufferPosition [line, column]
       , 50
   
-  addCurExecPosDiv: (editor, line, column) ->
-    editor.unfoldBufferRow line
-    $editor = $ atom.views.getView editor
-    maxTries = 0
-    do tryOne = =>
-      $execLineNumber = $editor.find '.line-number-' + line
-      if not $execLineNumber.length
-        if ++maxTries < 30 
-          setTimeout tryOne, 100
-        else
-          console.log 'addCurExecPosDiv failed', $execLineNumber.length, line
-        return
-      console.log 'addCurExecPosDiv', $execLineNumber.length, line
-      if not ($execIcon = $execLineNumber.find '.ide-exec-pos').length
-        $execLineNumber.append \
-          '<div class="ide-exec-pos">&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;</div>'
-
   showCurExecLine: (execPosition) ->
     if execPosition then @curExecPosition = execPosition
     @removeCurExecLine yes
     if @curExecPosition
       {file, line, column} = @curExecPosition
       @findShowEditor file, line, (editor) =>
-        @addCurExecPosDiv editor, line, column
+        do setMarker = (editor) ->
+          editor.nodeIdeExecMarker = editor.markBufferPosition [line, column]
+          editor.decorateMarker editor.nodeIdeExecMarker, 
+                type: 'gutter', class: 'node-ide-exec-line'
         @setCursorToLineColDelayed editor, line, column
         for editor in atom.workspace.getTextEditors() 
-          if @getPath(editor) is file
-            @addCurExecPosDiv editor, line, column
+          if @getPath(editor) is file and not editor.nodeIdeExecMarker
+            @setMarker editor
         null
       
   removeCurExecLine: (temp = no) ->
-    $('.workspace .editor .gutter').find('.ide-exec-pos').remove()
     if not temp then delete @curExecPosition
+    for editor in atom.workspace.getTextEditors()
+      editor.nodeIdeExecMarker?.destroy()
+      delete editor.nodeIdeExecMarker
+    null
+
+  getDecorationData: (breakpoint) ->
+    {enabled} = breakpoint 
+    type: 'gutter', class: 'node-ide-breakpoint-' +
+      (if breakpoint.enabled then 'enabled' else 'disabled')
+      
+  removeBreakpointsFromEditor: (editor) ->
+    if editor.nodeIdeDecorations
+      for id, decoration of editor.nodeIdeDecorations
+        decoration.getMarker()?.destroy()
+      delete editor.nodeIdeDecorations
   
   setBreakpointsInEditor: (editor) ->
     path = @getPath editor
-    $editor = $ atom.views.getView editor
-    $editor.find('.ide-breakpoint').remove()
+    @removeBreakpointsFromEditor editor
+    editor.nodeIdeDecorations = {}
     for id, breakpoint of @breakpointMgr.breakpoints
-      if breakpoint.file is path
+      if breakpoint.file is path and not editor.nodeIdeDecorations[id]
         {line, column} = breakpoint
-        if not (($line = $editor.find('.line-number[data-buffer-row="' + 
-                                      line + '"]')).length and
-                ($bp = $line.find('.ide-breakpoint')).length)
-          $bp = $ '<div class="ide-breakpoint"></div>'
-          if $line.length then $line.append $bp
-        if breakpoint.enabled and breakpoint.active
-             $bp.addClass    'enabled'
-        else $bp.removeClass 'enabled'
+        marker = editor.markBufferPosition [line, column]
+        decoration = editor.decorateMarker marker, @getDecorationData breakpoint
+        editor.nodeIdeDecorations[id] = decoration
     null
-
+    
   setAllBreakpoints: ->
     for editor in atom.workspace.getTextEditors()
       @setBreakpointsInEditor editor
-    
+    null
+  
   showBreakpoint: (breakpoint) ->
     {file, line, column} = breakpoint
     @findShowEditor file, line, (editor) =>
@@ -99,39 +95,28 @@ class CodeDisplay
       null
       
   changeBreakpoint: (breakpoint) ->
+    decorationData = @getDecorationData breakpoint
     for editor in atom.workspace.getTextEditors()
-      $editor = $ atom.views.getView editor
-      $editor.find('.ide-breakpoint').each (i, ele) =>
-        $bp = $ ele
-        if +$bp.closest('.line-number').attr('data-buffer-row') is
-           breakpoint.line
-          if breakpoint.enabled and breakpoint.active
-               $bp.addClass    'enabled'
-          else $bp.removeClass 'enabled'
+      if (decoration = editor.nodeIdeBreakpoints?[breakpoint.id])
+        decoration.setProperties decorationData
     null
     
   removeBreakpoint: (breakpoint) -> 
     for editor in atom.workspace.getTextEditors()
-      $editor = $ atom.views.getView editor
-      $editor.find('.ide-breakpoint').each (i, ele) =>
-        $bp = $ ele
-        if +$bp.closest('.line-number').attr('data-buffer-row') is
-           breakpoint.line
-          $bp.remove()
+      if (decoration = editor.nodeIdeBreakpoints?[breakpoint.id])
+        decoration.getMarker()?.destroy()
     null    
-
+    
   removeAllBreakpoints: ->
     for editor in atom.workspace.getTextEditors()
-      $editor = $ atom.views.getView editor
-      $editor.find('.ide-breakpoint').remove()
+      @removeBreakpointsFromEditor editor
     null
     
-  showAll: (execPosition, fromEditor) ->
-    if not fromEditor
-      setTimeout =>
-        @setAllBreakpoints()
-        @showCurExecLine execPosition
-      , 50
+  showAll: (execPosition) ->
+    setTimeout =>
+      @setAllBreakpoints()
+      @showCurExecLine execPosition
+    , 50
 
   setupEvents: ->
     @subs.push $('atom-pane-container').on 'click', '.line-number', (e) =>
@@ -140,9 +125,6 @@ class CodeDisplay
       line = +$tgt.closest('.line-number').attr 'data-buffer-row'
       @breakpointMgr.toggleBreakpoint file, line
     false
-    
-    @subs.push $('.workspace .gutter .icon-right').on 'click', => @showAll()
-    @subs.push $('.workspace .lines .fold-marker').on 'click', => @showAll()
   
   destroy: ->
     @removeCurExecLine()

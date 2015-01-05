@@ -150,8 +150,8 @@ class BreakpointPopup
     @subs.push @$popup.on 'click',  '.ide-list-bp',  (e) => @showBp e
     @subs.push @$popup.on 'click',  '.ide-list-del', (e) => @deleteBp e
     
-    # @subs.push $('.workspace').on 'click mousedown focus blur keydown',  => 
-    #   if @showing then @hide()
+    @subs.push $('.workspace').on 'click mousedown focus blur keydown',  => 
+      if @showing then @hide()
     
   destroy: ->
     @$popup.remove()

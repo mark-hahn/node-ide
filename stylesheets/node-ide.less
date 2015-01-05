@@ -6,35 +6,20 @@
 .workspace .ide-tool-panel {
   z-index:10;
 }
-.workspace .item-views .gutter .ide-exec-pos {
-  display: inline-block;
-  position:absolute;
-  right:1.5em;
-  top:0;
-  height:100%;
-  color: red;
-  font-weight:bold;
-  background-color: @syntax-background-color ;
-}
-
-.line-numbers .line-number .ide-breakpoint {
-  position: absolute;
-  top:0;
-  right:0;
-  font-size: 0.8em;
-  padding: 0.25em 0.3em 0 0.4em;
-  
-  font-family: 'Octicons Regular';
-  color: gray;
-  font-weight: normal;
-  font-style: normal;
-  font-variant: normal;
-  text-transform: none;
-  -webkit-font-smoothing: antialiased;
+.line-numbers .line-number.node-ide-breakpoint-enabled .icon-right {
   &:before{content: @stop}
-  &.enabled {
-    color: red; // rgba(0, 0, 256, 0.25);
-  }
+  display: inline-block;
+  visibility: visible;
+  color: red; // rgba(0, 0, 256, 0.25);
+}
+.line-numbers .line-number.node-ide-breakpoint-disabled .icon-right {
+  &:before{content: @stop}
+  display: inline-block;
+  visibility: visible;
+  color: gray; // rgba(0, 0, 256, 0.25);
+}
+.node-ide-exec-line {
+  background-color: rgba(0, 0, 256, 0.25) !important;
 }
 .workspace .node-ide {
   width:100%;

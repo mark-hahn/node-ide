@@ -1,8 +1,8 @@
 
-IdeView = require './ide-view'
-{CompositeDisposable} = require 'atom'
 fs = require 'fs-plus'
 pathUtil = require 'path'
+IdeView = require './ide-view'
+{CompositeDisposable} = require 'atom'
 
 module.exports =
   config:
@@ -43,3 +43,4 @@ module.exports =
     @idePanel.destroy()
     @subs.dispose()
   
+
