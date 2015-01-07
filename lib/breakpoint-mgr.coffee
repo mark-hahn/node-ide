@@ -54,16 +54,16 @@ class BreakpointMgr
     failure = (msg) =>
       @codeExec?.clearbreakpoint breakpoint
       breakpoint.destroy()
-      @ideView.breakpointPopup.update()
+      @ideView.breakpointPanel.update()
       cb? msg
       
     success = =>
       if newBreakpoint then @breakpoints[breakpoint.id] = breakpoint
       @codeDisplay.showBreakpoint breakpoint
-      @ideView.breakpointPopup.update()
+      @ideView.breakpointPanel.update()
       cb? null
       
-    if @codeExec
+    if @codeExec?.connection
       @codeExec.addBreakpoint breakpoint, (err, {v8Id, line, column, added}) =>
         if err or not added
           failure 'not added'
@@ -81,7 +81,7 @@ class BreakpointMgr
   changeBreakpoint: (breakpoint) ->
     @codeDisplay.changeBreakpoint breakpoint
     @codeExec?.changeBreakpoint   breakpoint
-    @ideView.breakpointPopup.update()
+    @ideView.breakpointPanel.update()
     
   showBreakpoint: (breakpoint) ->
     @codeDisplay.showBreakpoint breakpoint
@@ -91,7 +91,7 @@ class BreakpointMgr
     @codeExec?.clearbreakpoint    breakpoint
     delete @breakpoints[breakpoint.id]
     breakpoint.destroy()
-    @ideView.breakpointPopup.update()
+    @ideView.breakpointPanel.update()
     
   toggleBreakpoint: (file, line) ->
     for id, breakpoint of @breakpoints when not breakpoint.destroyed
@@ -99,7 +99,7 @@ class BreakpointMgr
          breakpoint.line is line
         if breakpoint.enabled
           breakpoint.setEnabled no
-          @ideView.breakpointPopup.update()
+          @ideView.breakpointPanel.update()
         else
           @removeBreakpoint breakpoint
         return
@@ -109,7 +109,7 @@ class BreakpointMgr
   setActive: (@active) ->
     for id, breakpoint of @breakpoints when not breakpoint.destroyed 
       breakpoint.setActive @active
-    @ideView.breakpointPopup.setActive @active
+    @ideView.breakpointPanel.setActive @active
     
   setUncaughtExc: (@uncaughtExc) -> 
     @codeExec?.setUncaughtExc @uncaughtExc
@@ -118,17 +118,17 @@ class BreakpointMgr
     
   showAll: (file, line, column) ->
     @codeDisplay.showAll {file, line, column}
-    @ideView.breakpointPopup.update()
+    @ideView.breakpointPanel.update()
   
   enableAll:  -> 
     for id, breakpoint of @breakpoints then breakpoint.setEnabled yes
-    @ideView.breakpointPopup.update()
+    @ideView.breakpointPanel.update()
   disableAll: -> 
     for id, breakpoint of @breakpoints then breakpoint.setEnabled no
-    @ideView.breakpointPopup.update()
+    @ideView.breakpointPanel.update()
   deleteAll:  -> 
     for id, breakpoint of @breakpoints then @removeBreakpoint breakpoint
-    @ideView.breakpointPopup.update()
+    @ideView.breakpointPanel.update()
     
   allBreakpointData: ->
     breakpoints = {}

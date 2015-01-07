@@ -124,15 +124,16 @@ class V8connection
   suspend: (cb) -> @request 'suspend',  null, -> cb? null
   resume:  (cb) -> @request 'continue', null, -> cb? null
   
-  backtrace: (bottom, cb) -> 
-    @request 'backtrace',  {bottom, fromFrame:0, toFrame:10}, (err, res) -> 
-      cb null, res
-  
   frame: (number, cb) -> 
     @request 'frame', {number}, (err, res) -> 
       cb err, res
       if err is 'No frames' then return true
-  
+      
+  getStack: (cb) ->
+    @request 'backtrace', {}, (err, res) -> 
+      cb err, res
+      if err is 'No frames' then return true
+      
   getExecPosition: (number, cb) ->
     @frame number, (err, res) =>
       if err then cb err; return

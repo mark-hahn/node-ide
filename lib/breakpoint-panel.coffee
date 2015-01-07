@@ -1,15 +1,15 @@
 ###
-  lib/breakpoint-popup.coffee
+  lib/breakpoint-panel.coffee
 ###
 
 {$, $$} = require 'atom-space-pen-views'
 
 module.exports =
-class BreakpointPopup
+class BreakpointPanel
   
-  @popup: ->
-    @div class:'overlay from-top ide-view-popup native-key-bindings', tabindex: -1, =>
-      @div class: 'ide-bp-header', 'Breakpoints'
+  @panel: ->
+    @div class:'overlay from-top ide-view-panel native-key-bindings', tabindex: -1, =>
+      @div class: 'ide-view-panel-header', 'Breakpoints'
       @div class: 'ide-bp-chkboxes', =>
         @label =>
           @input class:'ide-active-chk ide-bp-chk', type:"checkbox"
@@ -21,28 +21,29 @@ class BreakpointPopup
           @input class:'ide-caught-chk ide-bp-chk', type:"checkbox"
           @text 'Caught Exc'
       @div class: 'ide-bp-buttons', =>
-        @div class: 'btn ide-popup-btn ide-bp-enable-all',  'Enable All'
-        @div class: 'btn ide-popup-btn ide-bp-disable-all', 'Disable All'
-        @div class: 'btn ide-popup-btn ide-bp-delete-all',  'Delete All'
-      @div class: 'ide-bp-list', =>
-        @div class: 'ide-bp-list-cover'
+        @div class: 'btn ide-panel-btn ide-bp-enable-all',  'Enable All'
+        @div class: 'btn ide-panel-btn ide-bp-disable-all', 'Disable All'
+        @div class: 'btn ide-panel-btn ide-bp-delete-all',  'Delete All'
+      @div class: 'ide-view-panel-list', =>
+        @div class: 'ide-view-panel-list-cover'
       
   constructor: (@breakpointMgr) ->
+    {@ideView}       = @breakpointMgr
     @subs            = []
-    @$popup          = $$ BreakpointPopup.popup
-    @$activeChkBox   = @$popup.find '.ide-active-chk'
-    @$uncaughtChkBox = @$popup.find '.ide-uncaught-chk'
-    @caughtChkBox    = @$popup.find '.ide-caught-chk'
+    @$panel          = $$ BreakpointPanel.panel
+    @$activeChkBox   = @$panel.find '.ide-active-chk'
+    @$uncaughtChkBox = @$panel.find '.ide-uncaught-chk'
+    @caughtChkBox    = @$panel.find '.ide-caught-chk'
     if @breakpointMgr.active      then @$activeChkBox.attr   checked: yes
     if @breakpointMgr.uncaughtExc then @$uncaughtChkBox.attr checked: yes
     if @breakpointMgr.caughtExc   then @caughtChkBox.attr    checked: yes
 
-    @$ideBpList = @$popup.find '.ide-bp-list'
-    @$popup.appendTo $ '.workspace'
+    @$ideBpList = @$panel.find '.ide-view-panel-list'
+    @$panel.appendTo $ '.workspace'
     @setupEvents()
     
   getBreakpoint: (e) ->
-    dataBpId = $(e.target).closest('.ide-list-bp').attr 'data-bpid'
+    dataBpId = $(e.target).closest('.ide-list-item').attr 'data-bpid'
     @breakpointMgr.breakpoints[dataBpId]
     
   addBreakpoint: (breakpoint) ->
@@ -51,7 +52,7 @@ class BreakpointPopup
     base  = parts.pop()
     path  = parts.join ' '
     @$ideBpList.prepend $newBp = $$ ->
-      @div class:'ide-list-bp', =>
+      @div class:'ide-list-item', =>
         @input class:'ide-list-chk', type:'checkbox'
         @div   class:'ide-list-del', 'X'
         @span  class:'ide-list-path', path
@@ -65,12 +66,13 @@ class BreakpointPopup
   show: (ofs) -> 
     @showing = yes
     @update()
-    @$popup.css(ofs).show()
+    @$panel.css(ofs).show()
+    @ideView.hideStackPanel()
     
   update: ->
     if @showing
       for id, breakpoint of @breakpointMgr.breakpoints
-        $bp = @$popup.find '.ide-list-bp[data-bpid="' + id + '"]'
+        $bp = @$panel.find '.ide-list-item[data-bpid="' + id + '"]'
         if not $bp.length
           @addBreakpoint breakpoint
         else
@@ -79,7 +81,7 @@ class BreakpointPopup
                $enbldChk.attr checked: yes
           else $enbldChk.removeAttr 'checked'
       execPosition = @breakpointMgr.codeExec?.getExecPosition()
-      @$popup.find('.ide-list-bp').each (i, e) =>
+      @$panel.find('.ide-list-item').each (i, e) =>
         $bp = $ e
         bpid = $bp.attr 'data-bpid'
         breakpoint = @breakpointMgr.breakpoints[bpid]
@@ -93,12 +95,12 @@ class BreakpointPopup
           $bp.removeClass 'exec-pos'
         
   hide: -> 
-    @$popup.hide()
-    @$popup.find('.ide-list-bp').remove()
+    @$panel.hide()
+    @$panel.find('.ide-list-item').remove()
     @showing = no
     
   setActive: (active) ->
-    $cover = @$popup.find '.ide-bp-list-cover'
+    $cover = @$panel.find '.ide-view-panel-list-cover'
     if active then $cover.hide() else $cover.show()
     if active then @$activeChkBox.attr checked: yes
     else @$activeChkBox.removeAttr 'checked'
@@ -118,7 +120,7 @@ class BreakpointPopup
     @breakpointMgr.setCaughtExc set
     if set 
       @dontSetUncaughtExc = yes 
-      @$popup.find('.ide-uncaught-chk').attr checked: yes
+      @$panel.find('.ide-uncaught-chk').attr checked: yes
       @dontSetUncaughtExc = no 
     false
 
@@ -140,27 +142,27 @@ class BreakpointPopup
     false
                
   setupEvents: ->
-    @subs.push @$popup.on 'change', '.ide-active-chk',   (e) => @activeClick    e
-    @subs.push @$popup.on 'change', '.ide-uncaught-chk', (e) => @setUncaughtExc e
-    @subs.push @$popup.on 'change', '.ide-caught-chk',   (e) => @setCaughtExc   e
+    @subs.push @$panel.on 'change', '.ide-active-chk',   (e) => @activeClick    e
+    @subs.push @$panel.on 'change', '.ide-uncaught-chk', (e) => @setUncaughtExc e
+    @subs.push @$panel.on 'change', '.ide-caught-chk',   (e) => @setCaughtExc   e
     
-    @subs.push @$popup.on 'click', '.ide-bp-enable-all',  => @breakpointMgr.enableAll();  false
-    @subs.push @$popup.on 'click', '.ide-bp-disable-all', => @breakpointMgr.disableAll(); false
-    @subs.push @$popup.on 'click', '.ide-bp-delete-all',  => @breakpointMgr.deleteAll();  false
+    @subs.push @$panel.on 'click', '.ide-bp-enable-all',  => @breakpointMgr.enableAll();  false
+    @subs.push @$panel.on 'click', '.ide-bp-disable-all', => @breakpointMgr.disableAll(); false
+    @subs.push @$panel.on 'click', '.ide-bp-delete-all',  => @breakpointMgr.deleteAll();  false
     
-    @subs.push @$popup.on 'mouseenter', '.ide-list-bp', (e) => @setDelVisible e, yes
-    @subs.push @$popup.on 'mouseleave', '.ide-list-bp', (e) => @setDelVisible e, no
-    @subs.push @$popup.on 'mouseleave', '.ide-bp-list', (e) => @setDelVisible e, no
+    @subs.push @$panel.on 'mouseenter', '.ide-list-item', (e) => @setDelVisible e, yes
+    @subs.push @$panel.on 'mouseleave', '.ide-list-item', (e) => @setDelVisible e, no
+    @subs.push @$panel.on 'mouseleave', '.ide-view-panel-list', (e) => @setDelVisible e, no
     
-    @subs.push @$popup.on 'change', '.ide-list-chk', (e) => @setEnblBp e
-    @subs.push @$popup.on 'click',  '.ide-list-bp',  (e) => @showBp e
-    @subs.push @$popup.on 'click',  '.ide-list-del', (e) => @deleteBp e
+    @subs.push @$panel.on 'change', '.ide-list-chk', (e) => @setEnblBp e
+    @subs.push @$panel.on 'click',  '.ide-list-item',  (e) => @showBp e
+    @subs.push @$panel.on 'click',  '.ide-list-del', (e) => @deleteBp e
     
-    @subs.push $('.workspace').on 'click mousedown focus blur keydown',  => 
-      if @showing then @hide()
+    # @subs.push $('.workspace').on 'click mousedown focus blur keydown',  => 
+    #   if @showing then @hide()
     
   destroy: ->
-    @$popup.remove()
+    @$panel.remove()
     for sub in @subs
       sub.off?()
       sub.dispose?()

@@ -111,19 +111,19 @@ atom-text-editor::shadow .gutter.git-diff-icon .line-number.node-ide-exec-line {
   .octicon.ide-step-in   {&:before{content: @arrow-down     }}
   .octicon.ide-step-out  {&:before{content: @arrow-up       }}
   .octicon.ide-stop      {&:before{content: @stop           }}
-  .octicon.ide-exec-pos  {&:before{content: @move-right     }}
+  .octicon.ide-stack     {&:before{content: @versions       }}
   
   // .octicon.ide- {&:before{content: @           }}
 }
 
-.workspace>.ide-view-popup {
+.workspace>.ide-view-panel {
   position:absolute;
   display:none;
   width:270px;
   max-height:70%;
   margin:25px 0 0 -9px;
   
-  .ide-bp-header {
+  .ide-view-panel-header {
     position:relative;
     top:-5px;
     border-bottom: 1px solid gray;
@@ -150,7 +150,7 @@ atom-text-editor::shadow .gutter.git-diff-icon .line-number.node-ide-exec-line {
       margin-right:8px;
     }
   }
-  .ide-bp-list {
+  .ide-view-panel-list {
     margin-top:4px;
     position:relative;
     overflow-y:scroll;
@@ -158,7 +158,7 @@ atom-text-editor::shadow .gutter.git-diff-icon .line-number.node-ide-exec-line {
     max-height:10%;   // doesn't work !!!
     // max-height: 80px;
 
-    .ide-bp-list-cover {
+    .ide-view-panel-list-cover {
       display:none;
       position:absolute;
       top:0;
@@ -168,7 +168,7 @@ atom-text-editor::shadow .gutter.git-diff-icon .line-number.node-ide-exec-line {
       background-color:@base-background-color;
       opacity:0.5;
     }
-    .ide-list-bp {
+    .ide-list-item {
       margin-bottom:5px;
       max-width:220px;
       font-size:14px;

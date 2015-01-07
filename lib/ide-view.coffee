@@ -4,7 +4,8 @@
 
 BreakpointMgr   = require './breakpoint-mgr'
 CodeExec        = require './code-exec'
-BreakpointPopup = require './breakpoint-popup'
+BreakpointPanel = require './breakpoint-panel'
+StackPanel      = require './stack-panel'
 
 module.exports =
 class IdeView extends View
@@ -21,8 +22,9 @@ class IdeView extends View
         @div outlet:'ideIn',    class:'new-btn octicon ide-step-in'
         @div outlet:'ideOut',   class:'new-btn octicon ide-step-out'
       @div class:'btn-separator'
-      @div outlet: 'inspectorButtons', class: 'inspector-buttons', =>
-        @div outlet:'breakBtn', class:'new-btn octicon ide-bp-btn ide-stop'
+      @div class: 'inspector-buttons', =>
+        @div class:'new-btn octicon ide-bp-btn ide-stop'
+        @div class:'new-btn octicon ide-stack-btn ide-stack'
 
   initialize: (@nodeIde) ->
     {@state, @internalFileDir} = @nodeIde
@@ -31,12 +33,13 @@ class IdeView extends View
       @parent().addClass('ide-tool-panel').show()
       @setupEvents()
       @breakpointMgr   = new BreakpointMgr   @
-      @breakpointPopup = new BreakpointPopup @breakpointMgr
+      @breakpointPanel = new BreakpointPanel @breakpointMgr
+      @stackPanel      = new StackPanel @
       @showConnected no
       @toggleConnection()
       
-      @breakpointPopup.setUncaughtExc null, @state.uncaughtExc
-      @breakpointPopup.setCaughtExc   null, @state.caughtExc
+      @breakpointPanel.setUncaughtExc null, @state.uncaughtExc
+      @breakpointPanel.setCaughtExc   null, @state.caughtExc
       
   getElement: -> @
   
@@ -71,6 +74,11 @@ class IdeView extends View
     if @codeExec and not @ideConn.hasClass 'connected' 
       @toggleConnection()
     @toggleConnection()
+    
+  hideBreakpointPanel:     -> @breakpointPanel.hide()
+  hideStackPanel:          -> @stackPanel     .hide()
+  
+  setStack: (frames, refs) -> @stackPanel.setStack frames, refs
       
   setupEvents: ->
     @subs.push @on 'click', '.ide-conn', => 
@@ -93,10 +101,17 @@ class IdeView extends View
       false
       
     @subs.push @on 'click', '.ide-bp-btn', (e) =>
-      if @breakpointPopup.showing
-        @breakpointPopup.hide()
+      if @breakpointPanel.showing
+        @breakpointPanel.hide()
       else
-        @breakpointPopup.show $(e.target).offset()
+        @breakpointPanel.show $(e.target).offset()
+      false
+      
+    @subs.push @on 'click', '.ide-stack-btn', (e) =>
+      if @stackPanel.showing
+        @stackPanel.hide()
+      else
+        @stackPanel.show $(e.target).offset()
       false
       
   allBreakpointData: -> @breakpointMgr.allBreakpointData()
@@ -104,7 +119,8 @@ class IdeView extends View
   destroy: ->
     @codeExec?.destroy()
     @breakpointMgr?.destroy()
-    @breakpointPopup?.destroy()
+    @breakpointPanel?.destroy()
+    @stackPanel?.destroy()
     for sub in @subs
       sub.off?()
       sub.dispose?()

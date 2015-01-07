@@ -59,9 +59,9 @@ class CodeDisplay
     null
 
   getDecorationData: (breakpoint) ->
-    {enabled} = breakpoint 
+    enbldActive = breakpoint.enabled and breakpoint.active
     type: 'gutter', class: 'node-ide-breakpoint-' +
-      (if breakpoint.enabled then 'enabled' else 'disabled')
+      (if enbldActive then 'enabled' else 'disabled')
       
   removeBreakpointsFromEditor: (editor) ->
     if editor.nodeIdeBreakpoints

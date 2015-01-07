@@ -9,7 +9,12 @@ module.exports =
     panelOnBottom:
       title: 'Place main IDE panel on bottom instead of top'
       type: 'boolean'
-      default: false     
+      default: false  
+         
+    enterInternalFiles:
+      title: 'Step into Node internal functions like fs.js'
+      type: 'boolean'
+      default: yes     
       
   activate: (@state) ->
     @internalFileDir = 

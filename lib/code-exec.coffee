@@ -47,11 +47,15 @@ class CodeExec
     name = path.basename(file)[0...-ext.length]
     path.join @internalFileDir, '(' + name + ')' + ext
     
-  paused: (@execPosition, scriptId)->
+  paused: (@execPosition, scriptId, exception)->
     {file, line, column} = @execPosition
+    fileIsInternal = not /\/|\\/.test file 
+    if not atom.config.get('node-ide.enterInternalFiles') and 
+        fileIsInternal and not exception
+      @step 'out'
+      return
     @ideView.showRunPause no
-    if not /\/|\\/.test file 
-      file = @getInternalPath file
+    if fileIsInternal then file = @getInternalPath file
     if not fs.existsSync file
       fileArg = (if not scriptId then file)
       @connection?.getScriptSrc scriptId, fileArg, (err, scripts) =>
@@ -64,6 +68,11 @@ class CodeExec
       return
     @breakpointMgr.showAll file, line, column
     
+    @connection.getStack (err, res) =>
+      @frames = res.body.frames
+      @refs   = res.refs
+      @ideView.setStack @frames, @refs
+    
   getExecPosition: -> @execPosition
     
   run: ->
@@ -71,7 +80,7 @@ class CodeExec
     @connection?.resume =>
       @ideView.showRunPause yes
       @execPosition = null
-      @ideView.breakpointPopup.update()
+      @ideView.breakpointPanel.update()
       
   pause: ->
     @connection?.suspend => 
@@ -122,7 +131,7 @@ class CodeExec
     @connection?.onException (body) =>
       console.log 'exception:', body.exception.text, '\n', body
       {script, sourceLine: line, sourceColumn: column} = body
-      @paused {file:script.name, line, column}, script.id
+      @paused {file:script.name, line, column}, script.id, yes
       
   destroy: ->
     @codeDisplay?.removeCurExecLine()
