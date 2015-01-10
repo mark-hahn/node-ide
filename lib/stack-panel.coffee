@@ -30,41 +30,49 @@ class StackPanel
     @showing = no
     
   addFrame: (frame) ->
-    parts = ///^ 
-      \#\d+ .*?
-      ([\w\.\[\]<>]+) \)? \( .*?
-      (\S+)     \s
-      line      \s (\d+) \s
-      column    \s (\d+) \s
-      \(position\s (\d+)\)
-      $///.exec frame.text.replace /\r|\n/g, ' '
-    if not parts
-      console.log '\nnode-ide: frame text invalid', frame.index, frame.text.length, '\n', frame.text, '\n'
-      @$ideFrameList.append $$ ->
-        @div class:'ide-list-item', 'data-frameidx': frame.index, =>
-          @div 'Frame ' + frame.index + ' parse error.'
-      return
-    # console.log 'parts', frame.index, frame.text, parts
-    
-    func  = parts[1].replace ')(', '('
-    file  = parts[2].replace /^[a-z]:\\/i, ''
-    parts = file.split /\/|\\/g
-    base  = parts.pop()
-    path  = parts.join ' '
     @$ideFrameList.append $$ ->
       @div class:'ide-list-item', 'data-frameidx': frame.index, =>
-        @span  class:'ide-list-func', func
-        @span  class:'ide-list-path', path
+        @span  class:'ide-list-func', frame.func
+        @span  class:'ide-list-path', frame.path
         @div   class:'ide-list-base-line', =>
-          @span class:'ide-list-base', base
+          @span class:'ide-list-base', frame.base
           @span class:'ide-list-line', '(' + (frame.line+1) + ')'
   
   setStack: (@frames, @refs) ->
     @$ideFrameList.empty()
-    for frame in frames then @addFrame frame
+    for frame in frames 
+      parts = ///^ 
+        \#\d+ .*?
+        ([\w\.\[\]<>]+) \)? \( .*?
+        (\S+)      \s
+        line       \s (\d+) \s
+        column     \s (\d+) \s
+        \(position \s (\d+) \)
+        $///.exec frame.text.replace /\r|\n/g, ' '
+      if not parts
+        console.log '\nnode-ide: frame text invalid', 
+                      frame.index, frame.text.length, '\n', frame.text, '\n'
+        @$ideFrameList.append $$ ->
+          @div class:'ide-list-item', 'data-frameidx': frame.index, =>
+            @div 'Frame ' + frame.index + ' parse error.'
+        continue
+      frame.func  = parts[1].replace ')(', '('
+      frame.file  = parts[2]
+      fileParts   = frame.file.replace(/^[a-z]:\\/i, '').split /\/|\\/g
+      frame.base  = fileParts.pop()
+      frame.path  = fileParts.join ' '
+      @addFrame frame
+    null
+      
+  selectFrame: (e) ->
+    $item = $(e.target).closest '.ide-list-item'
+    $('.ide-list-item').removeClass 'selected'
+    $item.addClass 'selected'
+    frame = @frames[+$item.attr('data-frameidx')]
+    @ideView.showCurExecLine {file:frame.file, line:frame.line, column:frame.column}, yes
     
   setupEvents: ->
-    @subs.push @$panel.on 'click', '.ide-view-panel-list', (e) => @showFrame e
+    @subs.push @$panel.on 'click', '.ide-view-panel-list', (e) => @selectFrame e
     
     # @subs.push $('.workspace').on 'click mousedown focus blur keydown',  => 
     #   if @showing then @hide()

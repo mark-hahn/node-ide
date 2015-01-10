@@ -4,19 +4,21 @@
 
 {TextEditor} = require 'atom'
 {$} = require 'atom-space-pen-views'
+fs  = require 'fs-plus'
 _   = require 'underscore'
 
 module.exports =
 class CodeDisplay
   
-  constructor: (@breakpointMgr) ->
+  constructor: (@ideView) ->
     {Disposable, CompositeDisposable} = require 'atom'
-    disposables = new CompositeDisposable
+    @disposables = new CompositeDisposable
     @subs = []
     
     atom.workspace.observeTextEditors (editor) =>
       file = @getPath editor
-      if file is @curExecPosition?.file then @showCurExecLine()
+      if file is @curExecPosition?.file  then @showCurExecLine()
+      else if file is @curFramePosition?.file then @showCurExecLine yes
       @setBreakpointsInEditor editor
       
       shadowRoot  = atom.views.getView(editor).shadowRoot
@@ -25,10 +27,10 @@ class CodeDisplay
       lineNumberClick = (e) =>
         $tgt = $ e.target
         line = +$tgt.closest('.line-number').attr 'data-buffer-row'
-        @breakpointMgr.toggleBreakpoint file, line
+        @ideView.toggleBreakpoint file, line
         false
       lineNumbers.addEventListener 'click', lineNumberClick
-      disposables.add new Disposable ->
+      @disposables.add new Disposable ->
         lineNumbers.removeEventListener 'click', lineNumberClick
         
       @subs.push $shadowRoot.find('.gutter .icon-right').on 'click', => @showAll()
@@ -40,37 +42,51 @@ class CodeDisplay
       path = pathParts[1].toUpperCase() + pathParts[2]
     path
   
-  findShowEditor: (file, line, cb) ->
-    atom.workspace.open file, searchAllPanes: yes, initialLine: line-1
-      .then (editor) -> cb editor
+  findShowEditor: (file, line, column, cb) ->
+    if not fs.existsSync file then return
+    
+    atom.workspace.open file, searchAllPanes: yes, initialLine: line
+      .then (editor) -> 
+        if editor is atom.workspace.getActivePaneItem() then setTimeout ->
+          editor.setCursorBufferPosition [line, column]
+        , 50
+        cb? editor
   
-  setCursorToLineColDelayed: (editor, line, column) ->
-    if editor is atom.workspace.getActivePaneItem()
-      setTimeout ->
-        editor.setCursorBufferPosition [line, column]
-      , 50
-  
-  showCurExecLine: (execPosition) ->
-    if execPosition then @curExecPosition = execPosition
-    @removeCurExecLine yes
-    if @curExecPosition
-      {file, line, column} = @curExecPosition
-      @findShowEditor file, line, (editor) =>
-        do setMarker = (editor) ->
-          editor.nodeIdeExecMarker = editor.markBufferPosition [line, column]
-          editor.decorateMarker editor.nodeIdeExecMarker, 
-                type: 'gutter', class: 'node-ide-exec-line'
-        @setCursorToLineColDelayed editor, line, column
-        for otherEditor in atom.workspace.getTextEditors() 
-          if @getPath(otherEditor) is file and otherEditor isnt editor
-            setMarker otherEditor
+  showCurExecLine: (execPosition, isFrame) ->
+    if execPosition
+      if isFrame then  @curFramePosition = execPosition
+      else @curExecPosition = execPosition
+    if @curExecPosition?.file is @curFramePosition?.file and
+       @curExecPosition?.line is @curFramePosition?.line
+      isFrame = no
+    @removeCurExecLine isFrame, yes
+    position = (if isFrame then  @curFramePosition else @curExecPosition)
+    if position
+      {file, line, column} = position
+      @findShowEditor file, line, column, =>
+        for editor in atom.workspace.getTextEditors() 
+          if @getPath(editor) is file
+            if isFrame
+              editor.nodeIdeFrameMarker = editor.markBufferPosition [line, column]
+              editor.decorateMarker editor.nodeIdeFrameMarker, 
+                                      type: 'gutter', class: 'node-ide-frame-line'
+            else
+              editor.nodeIdeExecMarker = editor.markBufferPosition [line, column]
+              editor.decorateMarker editor.nodeIdeExecMarker, 
+                                      type: 'gutter', class: 'node-ide-exec-line'
         null
-      
-  removeCurExecLine: (temp = no) ->
-    if not temp then delete @curExecPosition
+  
+  removeCurExecLine: (isFrame = no, temp = no) ->
+    if not temp
+      if isFrame then delete @curFramePosition
+      else delete @curExecPosition
     for editor in atom.workspace.getTextEditors()
-      editor.nodeIdeExecMarker?.destroy()
-      delete editor.nodeIdeExecMarker
+      if isFrame
+        editor.nodeIdeFrameMarker?.destroy()
+        delete editor.nodeIdeFrameMarker
+      else        
+        editor.nodeIdeExecMarker?.destroy()
+        delete editor.nodeIdeExecMarker
     null
 
   getDecorationData: (breakpoint) ->
@@ -88,7 +104,7 @@ class CodeDisplay
     path = @getPath editor
     @removeBreakpointsFromEditor editor
     editor.nodeIdeBreakpoints = {}
-    for id, breakpoint of @breakpointMgr.breakpoints
+    for id, breakpoint of @ideView.breakpointMgr.breakpoints
       if breakpoint.file is path and not editor.nodeIdeBreakpoints[id]
         {line, column} = breakpoint
         marker = editor.markBufferPosition [line, column]
@@ -103,10 +119,9 @@ class CodeDisplay
   
   showBreakpoint: (breakpoint) ->
     {file, line, column} = breakpoint
-    @findShowEditor file, line, (editor) =>
+    @findShowEditor file, line, column, (editor) =>
       editor.unfoldBufferRow line
       @setAllBreakpoints()
-      @setCursorToLineColDelayed editor, line, column
       null
       
   changeBreakpoint: (breakpoint) ->
@@ -135,8 +150,9 @@ class CodeDisplay
     
   destroy: ->
     @removeCurExecLine()
+    @removeCurExecLine yes
     @removeAllBreakpoints()
-    disposables.dispose()
+    @disposables.dispose()
     for sub in @subs
       sub.off?()
       sub.dispose?()

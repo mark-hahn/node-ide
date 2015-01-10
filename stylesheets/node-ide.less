@@ -34,11 +34,16 @@ atom-text-editor::shadow .line-numbers .line-number {
     color: gray;
   }
 }
-atom-text-editor::shadow .gutter.git-diff-icon .line-number.node-ide-exec-line {
+atom-text-editor::shadow .gutter.git-diff-icon .line-number {
   // background: radial-gradient(@syntax-background-color, @syntax-background-color, red);
   // border: 2px solid red;
   border-radius: 20px;
-  background-color: rgba(255,0,0,0.2);
+  &.node-ide-exec-line {
+    background-color: rgba(255,0,0,0.2);
+  }
+  &.node-ide-frame-line {
+    background-color: rgba(0,255,0,0.2);
+  }
 }
 
 .workspace .node-ide {
@@ -194,6 +199,9 @@ atom-text-editor::shadow .gutter.git-diff-icon .line-number.node-ide-exec-line {
       color: @text-color;
       padding: 0 6px 0 6px;
       cursor:pointer;
+      &.selected {
+        background-color: rgba(0,255,0,0.2);
+      }
       &.exec-pos {
         background-color: @background-color-highlight;
       }

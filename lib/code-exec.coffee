@@ -77,6 +77,7 @@ class CodeExec
     
   run: ->
     @codeDisplay.removeCurExecLine()
+    @codeDisplay.removeCurExecLine yes
     @connection?.resume =>
       @ideView.showRunPause yes
       @execPosition = null

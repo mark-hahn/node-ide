@@ -3,6 +3,7 @@
 {TextEditor} = require 'atom'
 
 BreakpointMgr   = require './breakpoint-mgr'
+CodeDisplay     = require './code-display'
 CodeExec        = require './code-exec'
 BreakpointPanel = require './breakpoint-panel'
 StackPanel      = require './stack-panel'
@@ -33,11 +34,14 @@ class IdeView extends View
       @parent().addClass('ide-tool-panel').show()
       @setupEvents()
       @breakpointMgr   = new BreakpointMgr   @
+      @codeDisplay     = new CodeDisplay     @
       @breakpointPanel = new BreakpointPanel @breakpointMgr
-      @stackPanel      = new StackPanel @
+      @stackPanel      = new StackPanel      @
+      
       @showConnected no
       @toggleConnection()
       
+      @breakpointMgr.setCodeDisplay @codeDisplay
       @breakpointPanel.setUncaughtExc null, @state.uncaughtExc
       @breakpointPanel.setCaughtExc   null, @state.caughtExc
       
@@ -80,7 +84,13 @@ class IdeView extends View
   
   setStack: (frames, refs) -> @stackPanel.setStack frames, refs
       
-  setupEvents: ->
+  showCurExecLine: (position, isFrame = yes) -> 
+    @codeDisplay.showCurExecLine position, isFrame
+    
+  toggleBreakpoint: (file, line) -> @breakpointMgr.toggleBreakpoint file, line
+    
+  setupEvents: -> 
+  
     @subs.push @on 'click', '.ide-conn', => 
       @connClick()
       false

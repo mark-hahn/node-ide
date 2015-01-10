@@ -3,7 +3,6 @@
 ###
 
 Breakpoint  = require './breakpoint'
-CodeDisplay = require './code-display'
 
 module.exports = 
 class BreakpointMgr
@@ -25,7 +24,7 @@ class BreakpointMgr
       @breakpoints[newBp.id] = newBp
     state.breakpoints = @breakpoints
     
-    @codeDisplay = new CodeDisplay @
+  setCodeDisplay: (@codeDisplay) ->
   
   setCodeExec: (@codeExec) ->
     if @codeExec
@@ -76,7 +75,7 @@ class BreakpointMgr
         success()
       return
     success()
-    
+  
   changeBreakpoint: (breakpoint) ->
     @codeDisplay.changeBreakpoint breakpoint
     @codeExec?.changeBreakpoint   breakpoint
