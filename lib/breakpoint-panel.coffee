@@ -12,10 +12,10 @@ class BreakpointPanel
       @div class: 'ide-view-panel-header', 'Breakpoints'
       @div class: 'ide-bp-chkboxes', =>
         @label =>
-          @input class:'ide-active-chk ide-bp-chk', type:"checkbox"
+          @input class:'ide-active-chk ide-bp-chk', type:"checkbox", checked: yes
           @text 'Active'
         @label =>
-          @input class:'ide-uncaught-chk ide-bp-chk', type:"checkbox"
+          @input class:'ide-uncaught-chk ide-bp-chk', type:"checkbox", checked: yes
           @text 'Uncaught Exc'
         @label =>
           @input class:'ide-caught-chk ide-bp-chk', type:"checkbox"
@@ -34,9 +34,6 @@ class BreakpointPanel
     @$activeChkBox   = @$panel.find '.ide-active-chk'
     @$uncaughtChkBox = @$panel.find '.ide-uncaught-chk'
     @caughtChkBox    = @$panel.find '.ide-caught-chk'
-    if @breakpointMgr.active      then @$activeChkBox.attr   checked: yes
-    if @breakpointMgr.uncaughtExc then @$uncaughtChkBox.attr checked: yes
-    if @breakpointMgr.caughtExc   then @caughtChkBox.attr    checked: yes
 
     @$ideBpList = @$panel.find '.ide-view-panel-list'
     @$panel.appendTo $ '.workspace'
@@ -102,8 +99,8 @@ class BreakpointPanel
   setActive: (active) ->
     $cover = @$panel.find '.ide-view-panel-list-cover'
     if active then $cover.hide() else $cover.show()
-    if active then @$activeChkBox.attr checked: yes
-    else @$activeChkBox.removeAttr 'checked'
+    if active then @$activeChkBox.prop 'checked', yes
+    else @$activeChkBox.prop 'checked', no
     
   activeClick: (e) ->
     @breakpointMgr.setActive $(e.target).is ':checked'

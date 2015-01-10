@@ -45,9 +45,8 @@ class V8connection
   request: (command, args, cb) ->
     ok = @connected or @connectPending
     
-    console.log 'request', command, ok, @reqSeq, args
+    # console.log 'request', command, ok, @reqSeq, args
     
-    if args?.breakpoint? and not args.breakpoint then debugger
     if not ok then return
 
     @reqCallbacks[@reqSeq] = cb
@@ -64,7 +63,7 @@ class V8connection
   
   response: (res) ->
     {type, event, command, request_seq, success, message, body} = res.body
-    console.log 'response', (command ? event), request_seq, res
+    # console.log 'response', (command ? event), request_seq, res
     switch type
       
       when 'event'

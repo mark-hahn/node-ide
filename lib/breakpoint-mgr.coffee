@@ -16,14 +16,13 @@ class BreakpointMgr
     state.caughtExc   ?= no
     {@active, @uncaughtExc, @caughtExc} = state
     
-    console.log 'state in', state
+    # console.log 'state in', state
     
     @breakpoints = {}
     for __, breakpoint of state.breakpoints
       breakpoint.active = @active
       newBp = new Breakpoint @, breakpoint
       @breakpoints[newBp.id] = newBp
-      console.log 'new Breakpoint', newBp.toString()
     state.breakpoints = @breakpoints
     
     @codeDisplay = new CodeDisplay @
@@ -133,7 +132,7 @@ class BreakpointMgr
   allBreakpointData: ->
     breakpoints = {}
     for id, breakpoint of @breakpoints when not breakpoint.destroyed
-      console.log 'out', breakpoint.toString()
+      # console.log 'out', breakpoint.toString()
       breakpoints[id] = breakpoint.getData()
     {breakpoints, @active, @uncaughtExc, @caughtExc}
     

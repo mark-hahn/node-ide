@@ -61,7 +61,7 @@ class CodeExec
       @connection?.getScriptSrc scriptId, fileArg, (err, scripts) =>
         if err or scripts.length is 0 then @noSource file; return
         {source} = scripts[0]
-        console.log 'paused source.length', source.length, file, line
+        # console.log 'paused source.length', source.length, file, line
         fs.writeFileSync file, source
         @breakpointMgr.showAll file, line, column
         return

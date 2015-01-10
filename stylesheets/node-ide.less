@@ -6,23 +6,39 @@
 .workspace .ide-tool-panel {
   z-index:10;
 }  
-.line-numbers .line-number.node-ide-breakpoint-enabled .icon-right {
-  &:before{content: @stop}
-  display: inline-block;
-  visibility: visible;
-  color: red;
+atom-text-editor::shadow .line-numbers .line-number {
+  &.node-ide-breakpoint-enabled .icon-right {
+    display: inline-block;
+    visibility: visible;
+    &:before {
+      content: @stop;
+      position:relative;
+      left:-4px;
+      top:0;
+    }
+  }
+  &.node-ide-breakpoint-disabled .icon-right {
+    display: inline-block;
+    visibility: visible;
+    &:before {
+      content: @stop;
+      position:relative;
+      left:-4px;
+      top:0;
+    }
+  }
+  &.node-ide-breakpoint-enabled .icon-right {
+    color: red;
+  }
+  &.node-ide-breakpoint-disabled .icon-right {
+    color: gray;
+  }
 }
-.line-numbers .line-number.node-ide-breakpoint-disabled .icon-right {
-  &:before{content: @stop}
-  display: inline-block;
-  visibility: visible;
-  color: gray;
-}
-atom-text-editor .gutter.git-diff-icon .line-number.node-ide-exec-line, 
 atom-text-editor::shadow .gutter.git-diff-icon .line-number.node-ide-exec-line {
-  background: radial-gradient(@syntax-background-color, @syntax-background-color, red);
-  border: 2px solid red;
-  border-radius: 0 100% 100% 0;
+  // background: radial-gradient(@syntax-background-color, @syntax-background-color, red);
+  // border: 2px solid red;
+  border-radius: 20px;
+  background-color: rgba(255,0,0,0.2);
 }
 
 .workspace .node-ide {

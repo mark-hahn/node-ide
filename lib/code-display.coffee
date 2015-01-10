@@ -2,23 +2,38 @@
    lib/code-display.coffee
 ###
 
-{TextEditor}    = require 'atom'
-{$}             = require 'atom-space-pen-views'
-_               = require 'underscore'
-# GutterComponent = require './gutter-component.coffee'
+{TextEditor} = require 'atom'
+{$} = require 'atom-space-pen-views'
+_   = require 'underscore'
 
 module.exports =
 class CodeDisplay
   
   constructor: (@breakpointMgr) ->
+    {Disposable, CompositeDisposable} = require 'atom'
+    disposables = new CompositeDisposable
     @subs = []
     
     atom.workspace.observeTextEditors (editor) =>
-      if @getPath(editor) is @curExecPosition?.file then @showCurExecLine()
+      file = @getPath editor
+      if file is @curExecPosition?.file then @showCurExecLine()
       @setBreakpointsInEditor editor
-
-    @setupEvents()
-    
+      
+      shadowRoot  = atom.views.getView(editor).shadowRoot
+      $shadowRoot = $ shadowRoot
+      lineNumbers = shadowRoot.querySelector '.line-numbers' 
+      lineNumberClick = (e) =>
+        $tgt = $ e.target
+        line = +$tgt.closest('.line-number').attr 'data-buffer-row'
+        @breakpointMgr.toggleBreakpoint file, line
+        false
+      lineNumbers.addEventListener 'click', lineNumberClick
+      disposables.add new Disposable ->
+        lineNumbers.removeEventListener 'click', lineNumberClick
+        
+      @subs.push $shadowRoot.find('.gutter .icon-right').on 'click', => @showAll()
+      @subs.push $shadowRoot.find('.lines .fold-marker').on 'click', => @showAll()
+        
   getPath: (editor) ->
     path = editor.getPath()
     if (pathParts = /^([a-z]:)(.*)$/i.exec path)
@@ -46,9 +61,9 @@ class CodeDisplay
           editor.decorateMarker editor.nodeIdeExecMarker, 
                 type: 'gutter', class: 'node-ide-exec-line'
         @setCursorToLineColDelayed editor, line, column
-        for editor in atom.workspace.getTextEditors() 
-          if @getPath(editor) is file and not editor.nodeIdeExecMarker
-            @setMarker editor
+        for otherEditor in atom.workspace.getTextEditors() 
+          if @getPath(otherEditor) is file and otherEditor isnt editor
+            setMarker otherEditor
         null
       
   removeCurExecLine: (temp = no) ->
@@ -117,18 +132,11 @@ class CodeDisplay
       @setAllBreakpoints()
       @showCurExecLine execPosition
     , 50
-
-  setupEvents: ->
-    @subs.push $('atom-pane-container').on 'click', '.line-number', (e) =>
-      $tgt = $ e.target
-      file = @getPath $tgt.closest('atom-text-editor')[0].getModel()
-      line = +$tgt.closest('.line-number').attr 'data-buffer-row'
-      @breakpointMgr.toggleBreakpoint file, line
-    false
-  
+    
   destroy: ->
     @removeCurExecLine()
     @removeAllBreakpoints()
+    disposables.dispose()
     for sub in @subs
       sub.off?()
       sub.dispose?()

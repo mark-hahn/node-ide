@@ -44,7 +44,7 @@ class StackPanel
         @div class:'ide-list-item', 'data-frameidx': frame.index, =>
           @div 'Frame ' + frame.index + ' parse error.'
       return
-    console.log 'parts', frame.index, frame.text, parts
+    # console.log 'parts', frame.index, frame.text, parts
     
     func  = parts[1].replace ')(', '('
     file  = parts[2].replace /^[a-z]:\\/i, ''
