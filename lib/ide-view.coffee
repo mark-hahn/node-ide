@@ -24,7 +24,7 @@ class IdeView extends View
         @div outlet:'ideOut',   class:'new-btn octicon ide-step-out'
       @div class:'btn-separator'
       @div class: 'inspector-buttons', =>
-        @div class:'new-btn octicon ide-bp-btn ide-stop'
+        @div outlet:'stopSign', class:'new-btn octicon ide-bp-btn ide-stop'
         @div class:'new-btn octicon ide-stack-btn ide-stack'
 
   initialize: (@nodeIde) ->
@@ -65,6 +65,10 @@ class IdeView extends View
       @idePause.hide()     
       @connected = yes
       
+  setStopSignActive: (active) ->
+    if active then @stopSign.removeClass 'inactive'
+    else @stopSign.addClass 'inactive'
+      
   toggleConnection: -> 
     if not @codeExec
       @codeExec = new CodeExec @
@@ -86,6 +90,10 @@ class IdeView extends View
       
   showCurExecLine: (position, isFrame = yes) -> 
     @codeDisplay.showCurExecLine position, isFrame
+    
+  getCurPositions: -> 
+    curExecPosition:  @codeDisplay.curExecPosition
+    curFramePosition: @codeDisplay.curFramePosition
     
   toggleBreakpoint: (file, line) -> @breakpointMgr.toggleBreakpoint file, line
     

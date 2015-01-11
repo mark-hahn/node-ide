@@ -89,6 +89,8 @@ class CodeDisplay
         delete editor.nodeIdeExecMarker
     null
 
+  getCurPositions: -> {@curExecPosition, @curFramePosition}
+      
   getDecorationData: (breakpoint) ->
     enbldActive = breakpoint.enabled and breakpoint.active
     type: 'gutter', class: 'node-ide-breakpoint-' +
@@ -106,6 +108,7 @@ class CodeDisplay
     editor.nodeIdeBreakpoints = {}
     for id, breakpoint of @ideView.breakpointMgr.breakpoints
       if breakpoint.file is path and not editor.nodeIdeBreakpoints[id]
+        console.log 'setBreakpointsInEditor', breakpoint.line
         {line, column} = breakpoint
         marker = editor.markBufferPosition [line, column]
         decoration = editor.decorateMarker marker, @getDecorationData breakpoint

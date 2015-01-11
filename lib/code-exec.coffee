@@ -33,13 +33,12 @@ class CodeExec
         console.log 'node-ide: connected to', 
                      state.host + ':' + state.port + ', V8:' + V8Version
         if not running
-          @connection.getExecPosition 0, (err, @execPosition) =>
-            if not err then @codeDisplay.showCurExecLine @execPosition
+          @connection.getExecPosition 0, (err, execPosition) =>
+            if not err then @paused execPosition
   
   noSource: (file) ->
     console.log 'node-ide: unable to get source for ', file
     @codeDisplay.removeCurExecLine()
-    @execPosition = null
     @step 'out'    
     
   getInternalPath: (file) ->
@@ -47,8 +46,8 @@ class CodeExec
     name = path.basename(file)[0...-ext.length]
     path.join @internalFileDir, '(' + name + ')' + ext
     
-  paused: (@execPosition, scriptId, exception)->
-    {file, line, column} = @execPosition
+  paused: (execPosition, scriptId, exception)->
+    {file, line, column} = execPosition
     fileIsInternal = not /\/|\\/.test file 
     if not atom.config.get('node-ide.enterInternalFiles') and 
         fileIsInternal and not exception
@@ -61,7 +60,6 @@ class CodeExec
       @connection?.getScriptSrc scriptId, fileArg, (err, scripts) =>
         if err or scripts.length is 0 then @noSource file; return
         {source} = scripts[0]
-        # console.log 'paused source.length', source.length, file, line
         fs.writeFileSync file, source
         @breakpointMgr.showAll file, line, column
         return
@@ -73,27 +71,23 @@ class CodeExec
       @refs   = res.refs
       @ideView.setStack @frames, @refs
     
-  getExecPosition: -> @execPosition
-    
-  run: ->
-    @codeDisplay.removeCurExecLine()
-    @codeDisplay.removeCurExecLine yes
-    @connection?.resume =>
-      @ideView.showRunPause yes
-      @execPosition = null
-      @ideView.breakpointPanel.update()
-      
   pause: ->
     @connection?.suspend => 
       @connection.getExecPosition 0, (err, execPosition) =>
         if not err then @paused execPosition
     
-  step: (type) ->
-    @didstep = yes
-    @connection?.step type, =>
-      @ideView.showRunPause yes
-      
+  running: ->
+    @codeDisplay.removeCurExecLine()
+    @codeDisplay.removeCurExecLine yes
+    @ideView.showRunPause yes
+    @ideView.breakpointPanel.update()
+    @ideView.stackPanel.clear()
+    
+  run:         -> @connection?.resume     => @running()
+  step: (type) -> @connection?.step type, => @running()
+  
   addBreakpoint: (breakpoint, cb) ->
+    oldLine = breakpoint.line
     @connection?.setScriptBreakpoint breakpoint, (err, res) =>
       if err then cb? err; return
       {breakpoint: v8Id, actual_locations: actualLocations} = res.body
@@ -103,6 +97,9 @@ class CodeExec
         column = actualLocation.column
         added = yes
         break
+      if oldLine isnt line
+        console.log 'node-ide warning: requested breakpoint moved, line:', 
+                     oldLine+1, '->', line+1
       cb? null, {v8Id, line, column, added}
 
   changeBreakpoint: (breakpoint) ->
@@ -123,6 +120,8 @@ class CodeExec
         
   setCaughtExc:   (set) -> @connection?.setExceptionBreak 'all',       set
   setUncaughtExc: (set) -> @connection?.setExceptionBreak 'uncaught',  set
+
+  getExecPosition: -> @execPosition
 
   setUpEvents: ->
     @connection?.onBreak (body) =>

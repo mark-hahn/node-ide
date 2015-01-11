@@ -1,6 +1,7 @@
 
 fs = require 'fs-plus'
 pathUtil = require 'path'
+util     = require 'util'
 IdeView = require './ide-view'
 {CompositeDisposable} = require 'atom'
 
@@ -17,6 +18,8 @@ module.exports =
       default: yes     
       
   activate: (@state) ->
+    console.log 'node-ide activated', util.inspect @state, depth: null
+    
     @internalFileDir = 
       pathUtil.join fs.getHomeDirectory(), '.nodeIde'
     fs.makeTreeSync @internalFileDir

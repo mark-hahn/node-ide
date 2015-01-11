@@ -58,7 +58,7 @@ class BreakpointPanel
           @span class:'ide-list-line', '(' + (breakpoint.line+1) + ')'
     $newBp.attr 'data-bpid': breakpoint.id
     $chk = $newBp.find '.ide-list-chk'
-    if breakpoint.enabled then $chk.attr checked: yes
+    if breakpoint.enabled then $chk.prop checked: yes
     
   show: (ofs) -> 
     @showing = yes
@@ -74,9 +74,7 @@ class BreakpointPanel
           @addBreakpoint breakpoint
         else
           $enbldChk = $bp.find '.ide-list-chk'
-          if breakpoint.enabled
-               $enbldChk.attr checked: yes
-          else $enbldChk.removeAttr 'checked'
+          $enbldChk.prop checked: breakpoint.enabled
       execPosition = @breakpointMgr.codeExec?.getExecPosition()
       @$panel.find('.ide-list-item').each (i, e) =>
         $bp = $ e
@@ -97,11 +95,9 @@ class BreakpointPanel
     @showing = no
     
   setActive: (active) ->
-    $cover = @$panel.find '.ide-view-panel-list-cover'
-    if active then $cover.hide() else $cover.show()
-    if active then @$activeChkBox.prop 'checked', yes
-    else @$activeChkBox.prop 'checked', no
-    
+    @$activeChkBox.prop 'checked', active
+    @ideView.setStopSignActive active
+
   activeClick: (e) ->
     @breakpointMgr.setActive $(e.target).is ':checked'
     false
@@ -117,13 +113,21 @@ class BreakpointPanel
     @breakpointMgr.setCaughtExc set
     if set 
       @dontSetUncaughtExc = yes 
-      @$panel.find('.ide-uncaught-chk').attr checked: yes
+      @$panel.find('.ide-uncaught-chk').prop checked: yes
       @dontSetUncaughtExc = no 
     false
 
   setEnblBp: (e) -> 
     enbld = $(e.target).is ':checked'
-    @getBreakpoint(e).setEnabled enbld; false
+    if enbld then @breakpointMgr.setActive yes
+    breakpoint = @getBreakpoint e 
+    breakpoint.setEnabled enbld
+    # the following is to fix a problem caused by jQuery 1.6 .attr
+    setTimeout =>
+      id   = breakpoint.id
+      $chk = @$panel.find '.ide-list-item[data-bpid="' + id + '"] .ide-list-chk'
+      $chk.prop checked: enbld
+    , 50
     false
       
   showBp: (e) -> 
@@ -147,13 +151,13 @@ class BreakpointPanel
     @subs.push @$panel.on 'click', '.ide-bp-disable-all', => @breakpointMgr.disableAll(); false
     @subs.push @$panel.on 'click', '.ide-bp-delete-all',  => @breakpointMgr.deleteAll();  false
     
-    @subs.push @$panel.on 'mouseenter', '.ide-list-item', (e) => @setDelVisible e, yes
-    @subs.push @$panel.on 'mouseleave', '.ide-list-item', (e) => @setDelVisible e, no
+    @subs.push @$panel.on 'mouseenter', '.ide-list-item',       (e) => @setDelVisible e, yes
+    @subs.push @$panel.on 'mouseleave', '.ide-list-item',       (e) => @setDelVisible e, no
     @subs.push @$panel.on 'mouseleave', '.ide-view-panel-list', (e) => @setDelVisible e, no
     
-    @subs.push @$panel.on 'change', '.ide-list-chk', (e) => @setEnblBp e
-    @subs.push @$panel.on 'click',  '.ide-list-item',  (e) => @showBp e
-    @subs.push @$panel.on 'click',  '.ide-list-del', (e) => @deleteBp e
+    @subs.push @$panel.on 'change', '.ide-list-chk',  (e) => @setEnblBp e
+    @subs.push @$panel.on 'click',  '.ide-list-item', (e) => @showBp    e
+    @subs.push @$panel.on 'click',  '.ide-list-del',  (e) => @deleteBp  e
     
     # @subs.push $('.workspace').on 'click mousedown focus blur keydown',  => 
     #   if @showing then @hide()

@@ -29,17 +29,21 @@ class StackPanel
     @$panel.hide()
     @showing = no
     
+  clear: -> @$ideFrameList.empty()
+    
   addFrame: (frame) ->
-    @$ideFrameList.append $$ ->
+    @$ideFrameList.append $item = $$ ->
       @div class:'ide-list-item', 'data-frameidx': frame.index, =>
         @span  class:'ide-list-func', frame.func
         @span  class:'ide-list-path', frame.path
         @div   class:'ide-list-base-line', =>
           @span class:'ide-list-base', frame.base
           @span class:'ide-list-line', '(' + (frame.line+1) + ')'
+    $item
   
   setStack: (@frames, @refs) ->
     @$ideFrameList.empty()
+    {curExecPosition, curFramePosition} = @ideView.getCurPositions()
     for frame in frames 
       parts = ///^ 
         \#\d+ .*?
@@ -52,7 +56,7 @@ class StackPanel
       if not parts
         console.log '\nnode-ide: frame text invalid', 
                       frame.index, frame.text.length, '\n', frame.text, '\n'
-        @$ideFrameList.append $$ ->
+        @$ideFrameList.append $item = $$ ->
           @div class:'ide-list-item', 'data-frameidx': frame.index, =>
             @div 'Frame ' + frame.index + ' parse error.'
         continue
@@ -61,16 +65,26 @@ class StackPanel
       fileParts   = frame.file.replace(/^[a-z]:\\/i, '').split /\/|\\/g
       frame.base  = fileParts.pop()
       frame.path  = fileParts.join ' '
-      @addFrame frame
+      $item = @addFrame frame
+      if (frame.file is curExecPosition?.file and
+          frame.line is curExecPosition?.line) or
+         (frame.file is curFramePosition?.file and
+          frame.line is curFramePosition?.line)
+        @selectFrame null, $item
     null
       
-  selectFrame: (e) ->
-    $item = $(e.target).closest '.ide-list-item'
-    $('.ide-list-item').removeClass 'selected'
+  selectFrame: (e, $item) ->
+    if e then $item = $(e.target).closest '.ide-list-item'
+    @$panel.find('.ide-list-item').removeClass 'selected'
     $item.addClass 'selected'
-    frame = @frames[+$item.attr('data-frameidx')]
-    @ideView.showCurExecLine {file:frame.file, line:frame.line, column:frame.column}, yes
-    
+    if e  
+      frame = @frames[+$item.attr('data-frameidx')]
+      @ideView.showCurExecLine
+        file:   frame.file
+        line:   frame.line
+        column: frame.column
+      , yes
+      
   setupEvents: ->
     @subs.push @$panel.on 'click', '.ide-view-panel-list', (e) => @selectFrame e
     

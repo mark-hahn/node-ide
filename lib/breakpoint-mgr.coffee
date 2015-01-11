@@ -22,6 +22,7 @@ class BreakpointMgr
       breakpoint.active = @active
       newBp = new Breakpoint @, breakpoint
       @breakpoints[newBp.id] = newBp
+      console.log 'newBp', breakpoint.line, newBp.line
     state.breakpoints = @breakpoints
     
   setCodeDisplay: (@codeDisplay) ->

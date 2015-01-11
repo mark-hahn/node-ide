@@ -123,6 +123,9 @@ atom-text-editor::shadow .gutter.git-diff-icon .line-number {
     font-variant: normal;
     text-transform: none;
     -webkit-font-smoothing: antialiased;
+    &.inactive {
+      opacity: 0.3;
+    }
   }
 
   .octicon.ide-conn      {&:before{content: @zap            }}
@@ -179,16 +182,6 @@ atom-text-editor::shadow .gutter.git-diff-icon .line-number {
     max-height:10%;   // doesn't work !!!
     // max-height: 80px;
 
-    .ide-view-panel-list-cover {
-      display:none;
-      position:absolute;
-      top:0;
-      left:0;
-      width:100%;
-      height:100%;
-      background-color:@base-background-color;
-      opacity:0.5;
-    }
     .ide-list-item {
       margin-bottom:5px;
       max-width:220px;
