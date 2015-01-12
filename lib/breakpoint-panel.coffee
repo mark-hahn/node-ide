@@ -33,7 +33,7 @@ class BreakpointPanel
     @$panel          = $$ BreakpointPanel.panel
     @$activeChkBox   = @$panel.find '.ide-active-chk'
     @$uncaughtChkBox = @$panel.find '.ide-uncaught-chk'
-    @caughtChkBox    = @$panel.find '.ide-caught-chk'
+    @$caughtChkBox   = @$panel.find '.ide-caught-chk'
 
     @$ideBpList = @$panel.find '.ide-view-panel-list'
     @$panel.appendTo $ '.workspace'
@@ -95,26 +95,25 @@ class BreakpointPanel
     @showing = no
     
   setActive: (active) ->
-    @$activeChkBox.prop 'checked', active
     @ideView.setStopSignActive active
+    @ideView.setClrAnyCheckbox @$activeChkBox, active
 
-  activeClick: (e) ->
-    @breakpointMgr.setActive $(e.target).is ':checked'
+  activeClick: ->
+    @breakpointMgr.setActive @$activeChkBox.is ':checked'
     false
     
-  setUncaughtExc: (e, set) ->
-    set ?= $(e.target).is ':checked'
-    if not @dontSetUncaughtExc
-      @breakpointMgr.setUncaughtExc set
+  setUncaughtExc: (set) ->
+    set ?= @$uncaughtChkBox.is ':checked'
+    @breakpointMgr.setUncaughtExc set
+    @ideView.setClrAnyCheckbox @$uncaughtChkBox, set
+    if not set then @setCaughtExc no
     false
     
-  setCaughtExc: (e, set) ->
-    set ?= $(e.target).is ':checked'
+  setCaughtExc: (set) ->
+    set ?= @$caughtChkBox.is ':checked'
     @breakpointMgr.setCaughtExc set
-    if set 
-      @dontSetUncaughtExc = yes 
-      @$panel.find('.ide-uncaught-chk').prop checked: yes
-      @dontSetUncaughtExc = no 
+    @ideView.setClrAnyCheckbox @$caughtChkBox, set
+    if set then @setUncaughtExc yes
     false
 
   setEnblBp: (e) -> 
@@ -123,13 +122,11 @@ class BreakpointPanel
     breakpoint = @getBreakpoint e 
     breakpoint.setEnabled enbld
     # the following is to fix a problem caused by jQuery 1.6 .attr
-    setTimeout =>
-      id   = breakpoint.id
-      $chk = @$panel.find '.ide-list-item[data-bpid="' + id + '"] .ide-list-chk'
-      $chk.prop checked: enbld
-    , 50
+    id   = breakpoint.id
+    $chk = @$panel.find '.ide-list-item[data-bpid="' + id + '"] .ide-list-chk'
+    @ideView.setClrAnyCheckbox $chk, enbld
     false
-      
+
   showBp: (e) -> 
     if e.target.tagName isnt 'INPUT'
       @breakpointMgr.showBreakpoint @getBreakpoint e; false
@@ -143,9 +140,9 @@ class BreakpointPanel
     false
                
   setupEvents: ->
-    @subs.push @$panel.on 'change', '.ide-active-chk',   (e) => @activeClick    e
-    @subs.push @$panel.on 'change', '.ide-uncaught-chk', (e) => @setUncaughtExc e
-    @subs.push @$panel.on 'change', '.ide-caught-chk',   (e) => @setCaughtExc   e
+    @subs.push @$panel.on 'change', '.ide-active-chk',   (e) => @activeClick()
+    @subs.push @$panel.on 'change', '.ide-uncaught-chk', (e) => @setUncaughtExc()
+    @subs.push @$panel.on 'change', '.ide-caught-chk',   (e) => @setCaughtExc()
     
     @subs.push @$panel.on 'click', '.ide-bp-enable-all',  => @breakpointMgr.enableAll();  false
     @subs.push @$panel.on 'click', '.ide-bp-disable-all', => @breakpointMgr.disableAll(); false

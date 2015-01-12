@@ -42,8 +42,8 @@ class IdeView extends View
       @toggleConnection()
       
       @breakpointMgr.setCodeDisplay @codeDisplay
-      @breakpointPanel.setUncaughtExc null, @state.uncaughtExc
-      @breakpointPanel.setCaughtExc   null, @state.caughtExc
+      @breakpointPanel.setUncaughtExc @state.uncaughtExc
+      @breakpointPanel.setCaughtExc   @state.caughtExc
       
   getElement: -> @
   
@@ -133,6 +133,10 @@ class IdeView extends View
       false
       
   allBreakpointData: -> @breakpointMgr.allBreakpointData()
+  
+  # this is to fix .attr change in jQuery 1.6.0
+  setClrAnyCheckbox: ($chk, checked) ->
+    setTimeout (-> $chk.prop {checked}), 50
       
   destroy: ->
     @codeExec?.destroy()

@@ -12,13 +12,13 @@ module.exports =
 class CodeExec
   
   constructor: (@ideView) ->
-    {state, @breakpointMgr, @internalFileDir} = @ideView
-    state.host ?= '127.0.0.1'
-    state.port ?= 5858
+    {@state, @breakpointMgr, @internalFileDir} = @ideView
+    @state.host ?= '127.0.0.1'
+    @state.port ?= 5858
     
     @ideView.showRunPause no
     @connection = new V8connection @ideView
-    @connection.connect state.host, state.port, (err) =>
+    @connection.connect @state.host, @state.port, (err) =>
       if err 
         @connection = null
         @ideView.showConnected no
@@ -31,7 +31,7 @@ class CodeExec
         {V8Version, running} = res
         @ideView.showRunPause running
         console.log 'node-ide: connected to', 
-                     state.host + ':' + state.port + ', V8:' + V8Version
+                     @state.host + ':' + @state.port + ', V8:' + V8Version
         if not running
           @connection.getExecPosition 0, (err, execPosition) =>
             if not err then @paused execPosition
@@ -129,10 +129,15 @@ class CodeExec
       @paused {file:script.name, line, column}, script.id
       
     @connection?.onException (body) =>
-      console.log 'exception:', body.exception.text, '\n', body
-      {script, sourceLine: line, sourceColumn: column} = body
-      @paused {file:script.name, line, column}, script.id, yes
-      
+      {script, sourceLine: line, sourceColumn: column, exception, uncaught} = body
+      console.log 'exception:', @state.caughtExc, @state.uncaughtExc, exception.text
+      if uncaught and @state.uncaughtExc or 
+         not uncaught and @state.caughtExc
+        console.log 'node-ide: exception break, caught:', not uncaught
+        @paused {file:script.name, line, column}, script.id, yes
+      else
+        @connection?.resume()
+
   destroy: ->
     @codeDisplay?.removeCurExecLine()
     @connection?.destroy()

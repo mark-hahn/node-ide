@@ -110,10 +110,8 @@ class BreakpointMgr
       breakpoint.setActive @active
     @ideView.breakpointPanel.setActive @active
     
-  setUncaughtExc: (@uncaughtExc) -> 
-    @codeExec?.setUncaughtExc @uncaughtExc
-  setCaughtExc  : (@caughtExc)   -> 
-    @codeExec?.setCaughtExc   @caughtExc
+  setUncaughtExc: (@uncaughtExc) -> @codeExec?.setUncaughtExc @uncaughtExc
+  setCaughtExc  : (@caughtExc)   -> @codeExec?.setCaughtExc   @caughtExc
     
   showAll: (file, line, column) ->
     @codeDisplay.showAll {file, line, column}
