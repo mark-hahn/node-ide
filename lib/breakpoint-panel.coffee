@@ -26,9 +26,9 @@ class BreakpointPanel
         @div class: 'btn ide-panel-btn ide-bp-delete-all',  'Delete All'
       @div class: 'ide-view-panel-list', =>
         @div class: 'ide-view-panel-list-cover'
-      
-  constructor: (@breakpointMgr) ->
-    {@ideView}       = @breakpointMgr
+
+  constructor: (@ideView) ->
+    {@breakpointMgr} = @ideView
     @subs            = []
     @$panel          = $$ BreakpointPanel.panel
     @$activeChkBox   = @$panel.find '.ide-active-chk'
@@ -36,7 +36,6 @@ class BreakpointPanel
     @$caughtChkBox   = @$panel.find '.ide-caught-chk'
 
     @$ideBpList = @$panel.find '.ide-view-panel-list'
-    @$panel.appendTo $ '.workspace'
     @setupEvents()
     
   getBreakpoint: (e) ->
@@ -62,12 +61,14 @@ class BreakpointPanel
     
   show: (ofs) -> 
     @showing = yes
+    @$panel.appendTo $ '.workspace'
     @update()
     @$panel.css(ofs).show()
-    @ideView.hideStackPanel()
+    if @ideView.stackPanel.showing
+      @ideView.hideStackPanel()
     
   update: ->
-    if @showing
+    if @showing or @docked
       for id, breakpoint of @breakpointMgr.breakpoints
         $bp = @$panel.find '.ide-list-item[data-bpid="' + id + '"]'
         if not $bp.length

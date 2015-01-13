@@ -3,6 +3,7 @@
 {TextEditor} = require 'atom'
 util = require 'util'
 
+Dock            = require './dock'
 BreakpointMgr   = require './breakpoint-mgr'
 CodeDisplay     = require './code-display'
 CodeExec        = require './code-exec'
@@ -32,7 +33,7 @@ class IdeView extends View
   initialize: (@nodeIde) ->
     {@state, @internalFileDir, @varPagePath} = @nodeIde
     
-    console.log 'IdeView initialize', util.inspect @state, depth: null
+    # console.log 'IdeView initialize', util.inspect @state, depth: null
     
     @subs = []
     process.nextTick =>
@@ -40,13 +41,14 @@ class IdeView extends View
       @setupEvents()
       @breakpointMgr   = new BreakpointMgr   @
       @codeDisplay     = new CodeDisplay     @
-      @breakpointPanel = new BreakpointPanel @breakpointMgr
+      @dock            = new Dock            @
+      @breakpointPanel = new BreakpointPanel @
       @stackPanel      = new StackPanel      @
       
       @showConnected no
       @toggleConnection()
       
-      @breakpointMgr.setCodeDisplay @codeDisplay
+      @breakpointMgr.setCodeDisplay   @codeDisplay
       @breakpointPanel.setUncaughtExc @state.uncaughtExc
       @breakpointPanel.setCaughtExc   @state.caughtExc
       if @state.varPageOpen then @openVarPage()
@@ -82,7 +84,7 @@ class IdeView extends View
       @codeExec.destroy()
       @codeExec = null
       @showConnected no
-    @breakpointMgr.setCodeExec @codeExec
+    @breakpointMgr.haveCodeExec @codeExec
   
   connClick: ->
     if @codeExec and not @ideConn.hasClass 'connected' 
@@ -102,6 +104,13 @@ class IdeView extends View
     curFramePosition: @codeDisplay.curFramePosition
     
   toggleBreakpoint: (file, line) -> @breakpointMgr.toggleBreakpoint file, line
+  
+  togglePanelBtn: (e, panel) ->
+    switch
+      when panel.showing then @dock.add panel
+      when panel.docked  then @dock.remove panel
+      else panel.show $(e.target).offset()
+    false
     
   setupEvents: -> 
   
@@ -125,19 +134,9 @@ class IdeView extends View
       false
       
     @subs.push @on 'click', '.ide-bp-btn', (e) =>
-      if @breakpointPanel.showing
-        @breakpointPanel.hide()
-      else
-        @breakpointPanel.show $(e.target).offset()
-      false
-      
+      @togglePanelBtn e, @breakpointPanel
     @subs.push @on 'click', '.ide-stack-btn', (e) =>
-      if @stackPanel.showing
-        @stackPanel.hide()
-      else
-        @stackPanel.show $(e.target).offset()
-      false
-      
+      @togglePanelBtn e, @stackPanel
     @subs.push @on 'click', '.ide-var-page-btn', (e) =>
       @openVarPage() or @saveCloseVarPage()
       false

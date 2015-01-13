@@ -24,7 +24,8 @@ class CodeExec
         @ideView.showConnected no
         return
       @setUpEvents()
-      @breakpointMgr.setCodeExec @
+      @clearAllBreakpoints()
+      @breakpointMgr.haveCodeExec @
       @codeDisplay = @breakpointMgr.codeDisplay
       @ideView.showConnected yes
       @connection.version (err, res) =>

@@ -141,13 +141,17 @@ atom-text-editor::shadow .gutter.git-diff-icon .line-number {
   // .octicon.ide- {&:before{content: @           }}
 }
 
-.workspace>.ide-view-panel {
-  position:absolute;
-  display:none;
-  width:270px;
-  max-height:70%;
-  margin:25px 0 0 -9px;
-  
+.workspace .ide-view-panel {
+  &.docked {
+    max-height:70%;
+    margin: 15px 0 0 10px;
+  }
+  &:not(.docked) {
+    display:none;
+    position:absolute;
+    margin:25px 0 0 -9px;
+    width:270px;
+  }
   .ide-view-panel-header {
     position:relative;
     top:-5px;
@@ -238,4 +242,9 @@ atom-text-editor::shadow .gutter.git-diff-icon .line-number {
       }
     }
   }
+}
+.workspace .ide-dock-panel {
+  // display: none;
+  width: 270px;
+  height:100%;
 }

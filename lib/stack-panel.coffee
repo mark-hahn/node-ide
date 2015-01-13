@@ -23,7 +23,9 @@ class StackPanel
   show: (ofs) -> 
     @showing = yes
     @$panel.css(ofs).show()
-    @ideView.hideBreakpointPanel()
+    if @ideView.breakpointPanel.showing
+      @ideView.hideBreakpointPanel()
+    @$panel.appendTo $ '.workspace'
     
   hide: -> 
     @$panel.hide()

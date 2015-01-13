@@ -20,7 +20,7 @@ module.exports =
     @state.caughtExc   ?= no
     @state.breakpoints ?= {}
     
-    console.log 'node-ide activated', util.inspect @state, depth: null
+    # console.log 'node-ide activated', util.inspect @state, depth: null
     
     @breakpoints = {}
     for __, breakpoint of @state.breakpoints
@@ -58,11 +58,11 @@ module.exports =
     @ideView?.changeBreakpoint breakpoint
       
   serialize: -> 
-    console.log 'node-ide serialize', util.inspect @state, depth: null
+    # console.log 'node-ide serialize', util.inspect @state, depth: null
     @state
 
   deactivate: ->
-    console.log 'node-ide deactivate'
+    # console.log 'node-ide deactivate'
     @ideView.destroy()
     @idePanel.destroy()
     @subs.dispose()
