@@ -2,28 +2,11 @@
   lib/breakpoint-mgr.coffee
 ###
 
-Breakpoint  = require './breakpoint'
-
 module.exports = 
 class BreakpointMgr
   
   constructor: (@ideView) ->
-    state = @ideView.state
-    state.breakpoints ?= {}
-    state.active      ?= yes
-    state.uncaughtExc ?= yes
-    state.caughtExc   ?= no
-    {@active, @uncaughtExc, @caughtExc} = state
-    
-    # console.log 'state in', state
-    
-    @breakpoints = {}
-    for __, breakpoint of state.breakpoints
-      breakpoint.active = @active
-      newBp = new Breakpoint @, breakpoint
-      @breakpoints[newBp.id] = newBp
-      console.log 'newBp', breakpoint.line, newBp.line
-    state.breakpoints = @breakpoints
+    {@state, @breakpoints} = @ideView
     
   setCodeDisplay: (@codeDisplay) ->
   
@@ -34,9 +17,9 @@ class BreakpointMgr
       for id, breakpoint of @breakpoints when not breakpoint.destroyed
         @createBreakpoint breakpoint, => 
           if ++fin is @breakpoints.length
-            @setActive      @active
-            @setUncaughtExc @uncaughtExc
-            @setCaughtExc   @caughtExc
+            @setActive      @state.active
+            @setUncaughtExc @state.uncaughtExc
+            @setCaughtExc   @state.caughtExc
         
   createBreakpoint: (breakpoint, cb, file, line, column = 0) -> 
     if (newBreakpoint = file?) 
@@ -44,8 +27,7 @@ class BreakpointMgr
         if file is bp.file and line is bp.line 
           cb? 'duplicate'
           return
-      breakpoint = new Breakpoint @, 
-                    {file, line, column, active: @ideView.state.active}
+      breakpoint = new Breakpoint @, {file, line, column}
     else
       {file, line, column} = breakpoint
       column ?= 0
@@ -57,7 +39,9 @@ class BreakpointMgr
       cb? msg
       
     success = =>
-      if newBreakpoint then @breakpoints[breakpoint.id] = breakpoint
+      if newBreakpoint 
+        @breakpoints[breakpoint.id] = breakpoint
+        @state.breakpoints[breakpoint.id] = breakpoint.getData()
       @codeDisplay.showBreakpoint breakpoint
       @ideView.breakpointPanel.update()
       cb? null
@@ -71,7 +55,7 @@ class BreakpointMgr
         if newBreakpoint
           for id, bp of @breakpoints when not bp.destroyed
             if file is bp.file and line is bp.line
-              failure 'moved to duplicate'
+              failure 'breakpoint location changed to duplicate'
               return
         success()
       return
@@ -80,7 +64,6 @@ class BreakpointMgr
   changeBreakpoint: (breakpoint) ->
     @codeDisplay.changeBreakpoint breakpoint
     @codeExec?.changeBreakpoint   breakpoint
-    @ideView.breakpointPanel.update()
     
   showBreakpoint: (breakpoint) ->
     @codeDisplay.showBreakpoint breakpoint
@@ -89,6 +72,7 @@ class BreakpointMgr
     @codeDisplay.removeBreakpoint breakpoint
     @codeExec?.clearbreakpoint    breakpoint
     delete @breakpoints[breakpoint.id]
+    delete @state.breakpoints[breakpoint.id]
     breakpoint.destroy()
     @ideView.breakpointPanel.update()
     
@@ -102,16 +86,22 @@ class BreakpointMgr
         else
           @removeBreakpoint breakpoint
         return
-    if not @active then @setActive yes
+    if not @state.active then @setActive yes
     @createBreakpoint null, null, file, line
     
-  setActive: (@active) ->
-    for id, breakpoint of @breakpoints when not breakpoint.destroyed 
-      breakpoint.setActive @active
-    @ideView.breakpointPanel.setActive @active
+  setActive: (active) ->
+    @state.active = active
+    @codeDisplay?.setActive            active
+    @codeExec?.setActive               active
+    @ideView.breakpointPanel.setActive active
+  
+  setUncaughtExc: (uncaughtExc) -> 
+    @state.uncaughtExc = uncaughtExc
+    @codeExec?.setUncaughtExc @state.uncaughtExc
     
-  setUncaughtExc: (@uncaughtExc) -> @codeExec?.setUncaughtExc @uncaughtExc
-  setCaughtExc  : (@caughtExc)   -> @codeExec?.setCaughtExc   @caughtExc
+  setCaughtExc  : (caughtExc)   -> 
+    @state.caughtExc = caughtExc
+    @codeExec?.setCaughtExc   @state.caughtExc
     
   showAll: (file, line, column) ->
     @codeDisplay.showAll {file, line, column}
@@ -126,13 +116,6 @@ class BreakpointMgr
   deleteAll:  -> 
     for id, breakpoint of @breakpoints then @removeBreakpoint breakpoint
     @ideView.breakpointPanel.update()
-    
-  allBreakpointData: ->
-    breakpoints = {}
-    for id, breakpoint of @breakpoints when not breakpoint.destroyed
-      # console.log 'out', breakpoint.toString()
-      breakpoints[id] = breakpoint.getData()
-    {breakpoints, @active, @uncaughtExc, @caughtExc}
     
   destroy: ->
     @codeDisplay?.destroy()

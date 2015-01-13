@@ -44,7 +44,8 @@ class StackPanel
   setStack: (@frames, @refs) ->
     @$ideFrameList.empty()
     {curExecPosition, curFramePosition} = @ideView.getCurPositions()
-    for frame in frames 
+    for frame, idx in @frames 
+      # frame = @frames[idx] = new Frame frame
       parts = ///^ 
         \#\d+ .*?
         ([\w\.\[\]<>]+) \)? \( .*?
@@ -65,28 +66,29 @@ class StackPanel
       fileParts   = frame.file.replace(/^[a-z]:\\/i, '').split /\/|\\/g
       frame.base  = fileParts.pop()
       frame.path  = fileParts.join ' '
-      $item = @addFrame frame
-      if (frame.file is curExecPosition?.file and
-          frame.line is curExecPosition?.line) or
-         (frame.file is curFramePosition?.file and
-          frame.line is curFramePosition?.line)
-        @selectFrame null, $item
-    null
-      
-  selectFrame: (e, $item) ->
-    if e then $item = $(e.target).closest '.ide-list-item'
+      @addFrame frame
+    @selectedFrame ?= @frames[0]
+    frameIdx = @selectedFrame.index
+    $frameItem = @$panel.find '.ide-list-item[data-frameidx="' + frameIdx + '"]'
+    @showSelectedFrame frame, $frameItem
+
+  showSelectedFrame: (frame, $frameItem) ->
     @$panel.find('.ide-list-item').removeClass 'selected'
-    $item.addClass 'selected'
-    if e  
-      frame = @frames[+$item.attr('data-frameidx')]
-      @ideView.showCurExecLine
-        file:   frame.file
-        line:   frame.line
-        column: frame.column
-      , yes
-      
+    $frameItem.addClass 'selected'
+    @ideView.showCurExecLine
+      file:   frame.file
+      line:   frame.line
+      column: frame.column
+
+  frameClick: (e) ->
+    $frameItem =  $(e.target).closest '.ide-list-item'
+    frameIdx = $frameItem.attr 'data-frameidx'
+    frame = @frames[frameIdx]
+    @selectedFrame = frame
+    @showSelectedFrame frame, $frameItem
+
   setupEvents: ->
-    @subs.push @$panel.on 'click', '.ide-view-panel-list', (e) => @selectFrame e
+    @subs.push @$panel.on 'click', '.ide-view-panel-list', (e) => @frameClick e
     
     # @subs.push $('.workspace').on 'click mousedown focus blur keydown',  => 
     #   if @showing then @hide()

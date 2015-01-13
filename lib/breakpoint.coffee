@@ -7,7 +7,7 @@ crypto = require 'crypto'
 module.exports = 
 class Breakpoint
   
-  constructor: (@breakpointMgr, args) ->
+  constructor: (@nodeIde, args) ->
     {@file, @line, @column, @active, @enabled, @condition, @ignoreCount} = args
     idPlainTxt = @file + '|' + @line + '|' + Date.now()
     @id = crypto.createHash('md5').update(idPlainTxt).digest 'hex'
@@ -16,9 +16,8 @@ class Breakpoint
       @condition = null
       @ignoreCount = 0
       
-  changeBreakpoint: -> if not @destroyed then @breakpointMgr.changeBreakpoint @
+  changeBreakpoint: -> if not @destroyed then @nodeIde.changeBreakpoint @
   
-  setActive:      (@active)      -> @changeBreakpoint()
   setEnabled:     (@enabled)     -> @changeBreakpoint()
   setCondition:   (@condition)   -> @changeBreakpoint()
   setIgnoreCount: (@ignoreCount) -> @changeBreakpoint()

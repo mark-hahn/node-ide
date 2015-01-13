@@ -92,7 +92,7 @@ class CodeDisplay
   getCurPositions: -> {@curExecPosition, @curFramePosition}
       
   getDecorationData: (breakpoint) ->
-    enbldActive = breakpoint.enabled and breakpoint.active
+    enbldActive = breakpoint.enabled and @active
     type: 'gutter', class: 'node-ide-breakpoint-' +
       (if enbldActive then 'enabled' else 'disabled')
       
@@ -108,7 +108,6 @@ class CodeDisplay
     editor.nodeIdeBreakpoints = {}
     for id, breakpoint of @ideView.breakpointMgr.breakpoints
       if breakpoint.file is path and not editor.nodeIdeBreakpoints[id]
-        console.log 'setBreakpointsInEditor', breakpoint.line
         {line, column} = breakpoint
         marker = editor.markBufferPosition [line, column]
         decoration = editor.decorateMarker marker, @getDecorationData breakpoint
@@ -144,6 +143,8 @@ class CodeDisplay
     for editor in atom.workspace.getTextEditors()
       @removeBreakpointsFromEditor editor
     null
+    
+  setActive: (@active) -> @setAllBreakpoints()
     
   showAll: (execPosition) ->
     setTimeout =>

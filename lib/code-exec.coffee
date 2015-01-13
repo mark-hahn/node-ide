@@ -103,8 +103,8 @@ class CodeExec
       cb? null, {v8Id, line, column, added}
 
   changeBreakpoint: (breakpoint) ->
-    {v8Id: breakpoint, enabled, ignoreCount, condition, active} = breakpoint
-    enabled and= active
+    {v8Id: breakpoint, enabled, ignoreCount, condition} = breakpoint
+    enabled and= @active
     args = {breakpoint, enabled, ignoreCount, condition}
     @connection?.changebreakpoint args
                     
@@ -118,6 +118,12 @@ class CodeExec
       for breakpoint in res.body.breakpoints
         @connection?.clearbreakpoint breakpoint.number
         
+  setActive: (active) ->
+    if active isnt @active
+      @active = active
+      for breakpoint in @breakpointMgr.breakpoints
+        @changeBreakpoint breakpoint
+    
   setCaughtExc:   (set) -> @connection?.setExceptionBreak 'all',       set
   setUncaughtExc: (set) -> @connection?.setExceptionBreak 'uncaught',  set
 
@@ -130,7 +136,7 @@ class CodeExec
       
     @connection?.onException (body) =>
       {script, sourceLine: line, sourceColumn: column, exception, uncaught} = body
-      console.log 'exception:', @state.caughtExc, @state.uncaughtExc, exception.text
+      # console.log 'exception:', @state.caughtExc, @state.uncaughtExc, exception.text
       if uncaught and @state.uncaughtExc or 
          not uncaught and @state.caughtExc
         console.log 'node-ide: exception break, caught:', not uncaught
