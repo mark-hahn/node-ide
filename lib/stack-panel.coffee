@@ -15,6 +15,7 @@ class StackPanel
       
   constructor: (@ideView) ->
     @subs          = []
+    @name          = 'stackPanel'
     @$panel        = $$ StackPanel.panel
     @$ideFrameList = @$panel.find '.ide-view-panel-list'
     @$panel.appendTo $ '.workspace'
@@ -45,9 +46,7 @@ class StackPanel
   
   setStack: (@frames, @refs) ->
     @$ideFrameList.empty()
-    {curExecPosition, curFramePosition} = @ideView.getCurPositions()
     for frame, idx in @frames 
-      # frame = @frames[idx] = new Frame frame
       parts = ///^ 
         \#\d+ .*?
         ([\w\.\[\]<>]+) \)? \( .*?
@@ -77,10 +76,7 @@ class StackPanel
   showSelectedFrame: (frame, $frameItem) ->
     @$panel.find('.ide-list-item').removeClass 'selected'
     $frameItem.addClass 'selected'
-    @ideView.showCurExecLine
-      file:   frame.file
-      line:   frame.line
-      column: frame.column
+    @ideView.showFrame frame
 
   frameClick: (e) ->
     $frameItem =  $(e.target).closest '.ide-list-item'
@@ -91,9 +87,8 @@ class StackPanel
 
   setupEvents: ->
     @subs.push @$panel.on 'click', '.ide-view-panel-list', (e) => @frameClick e
-    
-    # @subs.push $('.workspace').on 'click mousedown focus blur keydown',  => 
-    #   if @showing then @hide()
+    @subs.push $('.workspace').on 'click mousedown focus blur keydown',  => 
+      if @showing then @hide()
     
   destroy: ->
     @$panel.remove()

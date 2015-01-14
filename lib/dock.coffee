@@ -18,6 +18,7 @@ class Dock
   add: (subPanel) ->
     subPanel.showing = no
     subPanel.docked  = yes
+    @ideView.state[subPanel.name + 'Docked'] = yes
     subPanel.$panel.remove()
     subPanel.$panel.appendTo @$panel
     subPanel.$panel.removeClass 'overlay'
@@ -28,6 +29,7 @@ class Dock
     
   remove: (subPanel) ->
     subPanel.docked = no
+    @ideView.state[subPanel.name + 'Docked'] = no
     subPanel.$panel.remove()
     subPanel.$panel.removeClass 'docked'
     subPanel.$panel.addClass    'overlay'

@@ -2,6 +2,8 @@
   lib/breakpoint-mgr.coffee
 ###
 
+Breakpoint = require './breakpoint'
+
 module.exports = 
 class BreakpointMgr
   
@@ -101,10 +103,6 @@ class BreakpointMgr
     @state.caughtExc = caughtExc
     @codeExec?.setCaughtExc   @state.caughtExc
     
-  showAll: (file, line, column) ->
-    @codeDisplay.showAll {file, line, column}
-    @ideView.breakpointPanel.update()
-  
   enableAll:  -> 
     for id, breakpoint of @breakpoints then breakpoint.setEnabled yes
     @ideView.breakpointPanel.update()

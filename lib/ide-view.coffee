@@ -51,7 +51,10 @@ class IdeView extends View
       @breakpointMgr.setCodeDisplay   @codeDisplay
       @breakpointPanel.setUncaughtExc @state.uncaughtExc
       @breakpointPanel.setCaughtExc   @state.caughtExc
-      if @state.varPageOpen then @openVarPage()
+      
+      if @state.breakpointPanelDocked then @dock.add @breakpointPanel
+      if @state.stackPanelDocked      then @dock.add @stackPanel
+      if @state.varPageOpen           then @openVarPage()
       
   getElement: -> @
   
@@ -94,14 +97,12 @@ class IdeView extends View
   hideBreakpointPanel: -> @breakpointPanel.hide()
   hideStackPanel:      -> @stackPanel     .hide()
   
-  setStack: (frames, refs) -> @stackPanel.setStack frames, refs
-      
-  showCurExecLine: (position, isFrame = yes) -> 
-    @codeDisplay.showCurExecLine position, isFrame
-    
-  getCurPositions: -> 
-    curExecPosition:  @codeDisplay.curExecPosition
-    curFramePosition: @codeDisplay.curFramePosition
+  setStack: (frames, refs) -> 
+    @codeDisplay.setStack frames, refs
+    @stackPanel .setStack frames, refs
+
+  showFrame: (frame) -> 
+    @codeDisplay.showFrame frame
     
   toggleBreakpoint: (file, line) -> @breakpointMgr.toggleBreakpoint file, line
   

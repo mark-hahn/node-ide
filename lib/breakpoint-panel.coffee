@@ -29,6 +29,7 @@ class BreakpointPanel
 
   constructor: (@ideView) ->
     {@breakpointMgr} = @ideView
+    @name            = 'breakpointPanel'
     @subs            = []
     @$panel          = $$ BreakpointPanel.panel
     @$activeChkBox   = @$panel.find '.ide-active-chk'
@@ -157,8 +158,8 @@ class BreakpointPanel
     @subs.push @$panel.on 'click',  '.ide-list-item', (e) => @showBp    e
     @subs.push @$panel.on 'click',  '.ide-list-del',  (e) => @deleteBp  e
     
-    # @subs.push $('.workspace').on 'click mousedown focus blur keydown',  => 
-    #   if @showing then @hide()
+    @subs.push $('.workspace').on 'click mousedown focus blur keydown',  => 
+      if @showing then @hide()
     
   destroy: ->
     @$panel.remove()

@@ -34,14 +34,13 @@ atom-text-editor::shadow .line-numbers .line-number {
     color: gray;
   }
 }
-atom-text-editor::shadow .gutter.git-diff-icon .line-number {
-  // background: radial-gradient(@syntax-background-color, @syntax-background-color, red);
-  // border: 2px solid red;
-  border-radius: 20px;
+atom-text-editor::shadow .gutter .line-number {
   &.node-ide-exec-line {
+    border-radius: 20px;
     background-color: rgba(255,0,0,0.2);
   }
   &.node-ide-frame-line {
+    border-radius: 20px;
     background-color: rgba(0,255,0,0.2);
   }
 }
@@ -184,13 +183,13 @@ atom-text-editor::shadow .gutter.git-diff-icon .line-number {
     position:relative;
     overflow-y:scroll;
     // height:40px;
-    max-height:10%;   // doesn't work !!!
+    // max-height:10%;   // doesn't work !!!
     // max-height: 80px;
 
     .ide-list-item {
       margin-bottom:5px;
-      max-width:220px;
-      font-size:14px;
+      width:220px;
+      font-size:12px;
       border:1px solid @button-border-color;
       margin:5px;
       background-color:@base-background-color;
@@ -229,15 +228,17 @@ atom-text-editor::shadow .gutter.git-diff-icon .line-number {
         font-size:11px;
       }
       .ide-list-base-line {
+        // font-style:italic;
+        font-weight:bold;
         display:inline-block;
         white-space:nowrap;
       }
       .ide-list-base {
         padding-left:6px;
-        font-size:15px;
+        font-size:13px;
       }
       .ide-list-line {
-        font-size:14px;
+        font-size:12px;
         padding-left:4px;
       }
     }
@@ -245,6 +246,6 @@ atom-text-editor::shadow .gutter.git-diff-icon .line-number {
 }
 .workspace .ide-dock-panel {
   // display: none;
-  width: 270px;
+  width: 260px;
   height:100%;
 }

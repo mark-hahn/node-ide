@@ -26,7 +26,7 @@ class CodeExec
       @setUpEvents()
       @clearAllBreakpoints()
       @breakpointMgr.haveCodeExec @
-      @codeDisplay = @breakpointMgr.codeDisplay
+      @codeDisplay = @ideView.codeDisplay
       @ideView.showConnected yes
       @connection.version (err, res) =>
         {V8Version, running} = res
@@ -47,6 +47,15 @@ class CodeExec
     name = path.basename(file)[0...-ext.length]
     path.join @internalFileDir, '(' + name + ')' + ext
     
+  displayAll: ->
+    @connection.getStack (err, res) =>
+      @frames = res.body.frames
+      @refs   = res.refs
+      @ideView.setStack @frames, @refs
+      @codeDisplay.showAll()
+      @codeDisplay.showFrame @frames[0]
+      @ideView.breakpointPanel.update()
+    
   paused: (execPosition, scriptId, exception)->
     {file, line, column} = execPosition
     fileIsInternal = not /\/|\\/.test file 
@@ -62,15 +71,10 @@ class CodeExec
         if err or scripts.length is 0 then @noSource file; return
         {source} = scripts[0]
         fs.writeFileSync file, source
-        @breakpointMgr.showAll file, line, column
+        @displayAll()
         return
       return
-    @breakpointMgr.showAll file, line, column
-    
-    @connection.getStack (err, res) =>
-      @frames = res.body.frames
-      @refs   = res.refs
-      @ideView.setStack @frames, @refs
+    @displayAll()
     
   pause: ->
     @connection?.suspend => 
@@ -78,11 +82,10 @@ class CodeExec
         if not err then @paused execPosition
     
   running: ->
-    @codeDisplay.removeCurExecLine()
-    @codeDisplay.removeCurExecLine yes
     @ideView.showRunPause yes
     @ideView.breakpointPanel.update()
     @ideView.stackPanel.clear()
+    @codeDisplay.clearFrames()
     
   run:         -> @connection?.resume     => @running()
   step: (type) -> @connection?.step type, => @running()
@@ -146,7 +149,6 @@ class CodeExec
         @connection?.resume()
 
   destroy: ->
-    @codeDisplay?.removeCurExecLine()
     @connection?.destroy()
     @ideView.showConnected no
 
