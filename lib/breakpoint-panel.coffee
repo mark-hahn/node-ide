@@ -60,8 +60,8 @@ class BreakpointPanel
     $chk = $newBp.find '.ide-list-chk'
     if breakpoint.enabled then $chk.prop checked: yes
     
-  show: (ofs) -> 
-    @showing = yes
+  float: (ofs) -> 
+    @floating = yes
     @$panel.appendTo $ '.workspace'
     @update()
     @$panel.css(ofs).show()
@@ -69,7 +69,7 @@ class BreakpointPanel
       @ideView.hideStackPanel()
     
   update: ->
-    if @showing or @docked
+    if @floating or @docked
       for id, breakpoint of @breakpointMgr.breakpoints
         $bp = @$panel.find '.ide-list-item[data-bpid="' + id + '"]'
         if not $bp.length
@@ -93,8 +93,8 @@ class BreakpointPanel
         
   hide: -> 
     @$panel.hide()
-    @$panel.find('.ide-list-item').remove()
-    @showing = no
+    @$panel.find('.ide-list-item').detach()
+    @floating = no
     
   setActive: (active) ->
     @ideView.setStopSignActive active
@@ -140,7 +140,7 @@ class BreakpointPanel
     $(e.target).find('.ide-list-del')
                .css visibility: (if vis then 'visible' else 'hidden')
     false
-               
+  
   setupEvents: ->
     @subs.push @$panel.on 'change', '.ide-active-chk',   (e) => @activeClick()
     @subs.push @$panel.on 'change', '.ide-uncaught-chk', (e) => @setUncaughtExc()
@@ -158,8 +158,8 @@ class BreakpointPanel
     @subs.push @$panel.on 'click',  '.ide-list-item', (e) => @showBp    e
     @subs.push @$panel.on 'click',  '.ide-list-del',  (e) => @deleteBp  e
     
-    @subs.push $('.workspace').on 'click mousedown focus blur keydown',  => 
-      if @showing then @hide()
+    @subs.push $('.workspace').on 'mousedown focus blur keydown',  (e) => 
+      if @floating then @hide()
     
   destroy: ->
     @$panel.remove()

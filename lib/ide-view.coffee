@@ -108,40 +108,11 @@ class IdeView extends View
   
   togglePanelBtn: (e, panel) ->
     switch
-      when panel.showing then @dock.add panel
-      when panel.docked  then @dock.remove panel
-      else panel.show $(e.target).offset()
+      when panel.floating then @dock.add    panel
+      when panel.docked   then @dock.remove panel
+      else panel.float $(e.target).offset()
     false
-    
-  setupEvents: -> 
-  
-    @subs.push @on 'click', '.ide-conn', => 
-      @connClick()
-      false
-    @subs.push @on 'click', '.ide-pause', => 
-      if @connected then @codeExec?.pause()
-      false
-    @subs.push @on 'click', '.ide-run', => 
-      if @connected then @codeExec?.run()
-      false
-    @subs.push @on 'click', '.ide-step-over', (e) => 
-      if @connected then @codeExec?.step 'next'
-      false
-    @subs.push @on 'click', '.ide-step-in', (e) => 
-      if @connected then @codeExec?.step 'in'
-      false
-    @subs.push @on 'click', '.ide-step-out', (e) => 
-      if @connected then @codeExec?.step 'out'
-      false
-      
-    @subs.push @on 'click', '.ide-bp-btn', (e) =>
-      @togglePanelBtn e, @breakpointPanel
-    @subs.push @on 'click', '.ide-stack-btn', (e) =>
-      @togglePanelBtn e, @stackPanel
-    @subs.push @on 'click', '.ide-var-page-btn', (e) =>
-      @openVarPage() or @saveCloseVarPage()
-      false
-      
+          
   # this is to fix .attr change in jQuery 1.6.0
   setClrAnyCheckbox: ($chk, checked) ->
     setTimeout (-> $chk.prop {checked}), 50
@@ -177,6 +148,35 @@ class IdeView extends View
       return yes
     no
       
+  setupEvents: -> 
+    @subs.push @on 'click', '.ide-conn', => 
+      @connClick()
+      false
+    @subs.push @on 'click', '.ide-pause', => 
+      if @connected then @codeExec?.pause()
+      false
+    @subs.push @on 'click', '.ide-run', => 
+      if @connected then @codeExec?.run()
+      false
+    @subs.push @on 'click', '.ide-step-over', (e) => 
+      if @connected then @codeExec?.step 'next'
+      false
+    @subs.push @on 'click', '.ide-step-in', (e) => 
+      if @connected then @codeExec?.step 'in'
+      false
+    @subs.push @on 'click', '.ide-step-out', (e) => 
+      if @connected then @codeExec?.step 'out'
+      false
+    @subs.push @on 'mousedown', '.ide-bp-btn', (e) =>
+      @togglePanelBtn e, @breakpointPanel
+      false
+    @subs.push @on 'mousedown', '.ide-stack-btn', (e) =>
+      @togglePanelBtn e, @stackPanel
+      false
+    @subs.push @on 'mousedown', '.ide-var-page-btn', (e) =>
+      @openVarPage() or @saveCloseVarPage()
+      false
+
   destroy: ->
     @saveCloseVarPage no
     @codeExec?.destroy()

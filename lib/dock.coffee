@@ -13,27 +13,25 @@ class Dock
   constructor: (@ideView) ->
     @subs     = []
     @$panel   = $$ Dock.panel
-    atom.workspace.addRightPanel item: @$panel, visible: false
+    atom.workspace.addRightPanel item: @$panel, visible: true
     
   add: (subPanel) ->
-    subPanel.showing = no
+    subPanel.floating = no
     subPanel.docked  = yes
     @ideView.state[subPanel.name + 'Docked'] = yes
-    subPanel.$panel.remove()
+    subPanel.$panel.detach()
     subPanel.$panel.appendTo @$panel
     subPanel.$panel.removeClass 'overlay'
     subPanel.$panel.removeClass 'from-top'
     subPanel.$panel.addClass    'docked'
-    @$panel.parent().show()
     @$panel.show()
     
   remove: (subPanel) ->
     subPanel.docked = no
     @ideView.state[subPanel.name + 'Docked'] = no
-    subPanel.$panel.remove()
+    subPanel.$panel.detach()
     subPanel.$panel.removeClass 'docked'
     subPanel.$panel.addClass    'overlay'
     subPanel.$panel.addClass    'from-top'
     if @$panel.children().length is 0
-      @$panel.parent().hide()
       @$panel.hide()

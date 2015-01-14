@@ -21,8 +21,8 @@ class StackPanel
     @$panel.appendTo $ '.workspace'
     @setupEvents()
     
-  show: (ofs) -> 
-    @showing = yes
+  float: (ofs) -> 
+    @floating = yes
     @$panel.css(ofs).show()
     if @ideView.breakpointPanel.showing
       @ideView.hideBreakpointPanel()
@@ -30,14 +30,14 @@ class StackPanel
     
   hide: -> 
     @$panel.hide()
-    @showing = no
+    @floating = @docked = no
     
   clear: -> @$ideFrameList.empty()
     
   addFrame: (frame) ->
     @$ideFrameList.append $item = $$ ->
       @div class:'ide-list-item', 'data-frameidx': frame.index, =>
-        @span  class:'ide-list-func', frame.func
+        @span  class:'ide-list-func', frame.func + ';'
         @span  class:'ide-list-path', frame.path
         @div   class:'ide-list-base-line', =>
           @span class:'ide-list-base', frame.base
@@ -84,11 +84,12 @@ class StackPanel
     frame = @frames[frameIdx]
     @selectedFrame = frame
     @showSelectedFrame frame, $frameItem
+    false
 
   setupEvents: ->
-    @subs.push @$panel.on 'click', '.ide-view-panel-list', (e) => @frameClick e
-    @subs.push $('.workspace').on 'click mousedown focus blur keydown',  => 
-      if @showing then @hide()
+    @subs.push @$panel.on 'mousedown', '.ide-view-panel-list', (e) => @frameClick e
+    @subs.push $('.workspace').on 'mousedown focus blur keydown',  (e) => 
+      if @floating then @hide()
     
   destroy: ->
     @$panel.remove()
