@@ -31,13 +31,12 @@ class IdeView extends View
         @div class:'new-btn octicon ide-var-page-btn ide-eye'
 
   initialize: (@nodeIde) ->
-    {@state, @internalFileDir, @varPagePath} = @nodeIde
+    {@state, @internalFileDir, @varPagePath, @breakpoints} = @nodeIde
     
     # console.log 'IdeView initialize', util.inspect @state, depth: null
     
     @subs = []
     process.nextTick =>
-      @parent().addClass('ide-tool-panel').show()
       @setupEvents()
       @breakpointMgr   = new BreakpointMgr   @
       @codeDisplay     = new CodeDisplay     @
@@ -184,6 +183,7 @@ class IdeView extends View
     @breakpointPanel?.destroy()
     @stackPanel?.destroy()
     @varPage?.destroy()
+    @dock.destroy()
     for sub in @subs
       sub.off?()
       sub.dispose?()

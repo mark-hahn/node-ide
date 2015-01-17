@@ -13,7 +13,7 @@ class Dock
   constructor: (@ideView) ->
     @subs     = []
     @$panel   = $$ Dock.panel
-    atom.workspace.addRightPanel item: @$panel, visible: true
+    atom.workspace.addRightPanel item: @$panel
     
   add: (subPanel) ->
     subPanel.floating = no
@@ -35,3 +35,5 @@ class Dock
     subPanel.$panel.addClass    'from-top'
     if @$panel.children().length is 0
       @$panel.hide()
+
+  destroy: -> @$panel.remove()

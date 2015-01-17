@@ -42,7 +42,7 @@ module.exports =
 
   newIdePanel: ->
     @ideView = new IdeView @
-    idePanelOpts = item: @ideView.getElement(), visible: false
+    idePanelOpts = item: @ideView.getElement()
     @idePanel = atom.workspace.addTopPanel idePanelOpts
   
   toggle: ->
@@ -54,7 +54,7 @@ module.exports =
       @idePanel = null
       
   changeBreakpoint: (breakpoint) -> 
-    @state.breakpoints[id] = breakpoint.getData()
+    @state.breakpoints[breakpoint.id] = breakpoint.getData()
     @ideView?.changeBreakpoint breakpoint
       
   serialize: -> 

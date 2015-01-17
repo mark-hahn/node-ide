@@ -65,7 +65,7 @@ class BreakpointPanel
     @$panel.appendTo $ '.workspace'
     @update()
     @$panel.css(ofs).show()
-    if @ideView.stackPanel.showing
+    if @ideView.stackPanel.floating
       @ideView.hideStackPanel()
     
   update: ->

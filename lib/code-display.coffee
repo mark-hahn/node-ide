@@ -21,15 +21,13 @@ class CodeDisplay
       @setFramesInEditor      editor
       @setBreakpointsInEditor editor
       
-      lineNumberClick = (e) =>
+      $shadowRoot = $ atom.views.getView(editor).shadowRoot
+      $lineNumbers = $shadowRoot.children().find '.line-numbers' 
+      @subs.push $lineNumbers.click (e) =>
         $tgt = $ e.target
         line = +$tgt.closest('.line-number').attr 'data-buffer-row'
         @ideView.toggleBreakpoint file, line
         false
-        
-      $shadowRoot = $ atom.views.getView(editor).shadowRoot
-      $lineNumbers = $shadowRoot.find '.line-numbers' 
-      @subs.push $lineNumbers.click lineNumberClick
         
   getPath: (editor) ->
     path = editor.getPath()
@@ -61,7 +59,7 @@ class CodeDisplay
         {line, column} = frame
         marker = editor.markBufferPosition [line, column]
         decoration = editor.decorateMarker marker, 
-            type: 'gutter'
+            type: 'line-number'
             class: (if idx is 0 then 'node-ide-exec-line' else 'node-ide-frame-line')
         editor.nodeIdeFrames.push decoration
     null
@@ -85,7 +83,7 @@ class CodeDisplay
       
   getDecorationData: (breakpoint) ->
     enbldActive = breakpoint.enabled and @active
-    type: 'gutter', class: 'node-ide-breakpoint-' +
+    type: 'line-number', class: 'node-ide-breakpoint-' +
       (if enbldActive then 'enabled' else 'disabled')
       
   removeBreakpointsFromEditor: (editor) ->
@@ -146,7 +144,7 @@ class CodeDisplay
     , 50
 
   destroy: ->
-    @removeAllFrames()
+    @clearFrames()
     @removeAllBreakpoints()
     @disposables.dispose()
     for sub in @subs

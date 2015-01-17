@@ -13,13 +13,11 @@ class BreakpointMgr
   setCodeDisplay: (@codeDisplay) ->
   
   haveCodeExec: (@codeExec) ->
-    fin = 0
     for id, breakpoint of @breakpoints when not breakpoint.destroyed
-      @createBreakpoint breakpoint, => 
-        if ++fin is @breakpoints.length
-          @setActive      @state.active
-          @setUncaughtExc @state.uncaughtExc
-          @setCaughtExc   @state.caughtExc
+      @createBreakpoint breakpoint
+    @setActive      @state.active
+    @setUncaughtExc @state.uncaughtExc
+    @setCaughtExc   @state.caughtExc
         
   createBreakpoint: (breakpoint, cb, file, line, column = 0) -> 
     if (newBreakpoint = file?) 

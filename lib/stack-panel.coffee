@@ -24,7 +24,7 @@ class StackPanel
   float: (ofs) -> 
     @floating = yes
     @$panel.css(ofs).show()
-    if @ideView.breakpointPanel.showing
+    if @ideView.breakpointPanel.floating
       @ideView.hideBreakpointPanel()
     @$panel.appendTo $ '.workspace'
     
