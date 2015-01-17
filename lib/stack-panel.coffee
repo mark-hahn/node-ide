@@ -87,8 +87,8 @@ class StackPanel
     false
 
   setupEvents: ->
-    @subs.push @$panel.on 'mousedown', '.ide-view-panel-list', (e) => @frameClick e
-    @subs.push $('.workspace').on 'mousedown focus blur keydown',  (e) => 
+    @subs.push @$panel.on 'click', '.ide-view-panel-list', (e) => @frameClick e
+    @subs.push $('.workspace').on 'click focus blur keydown',  (e) => 
       if @floating then @hide()
     
   destroy: ->

@@ -166,13 +166,15 @@ class IdeView extends View
     @subs.push @on 'click', '.ide-step-out', (e) => 
       if @connected then @codeExec?.step 'out'
       false
-    @subs.push @on 'mousedown', '.ide-bp-btn', (e) =>
+      
+    @subs.push @on 'click mousedown', '.inspector-buttons', false
+    @subs.push @on 'click', '.ide-bp-btn', (e) =>
       @togglePanelBtn e, @breakpointPanel
       false
-    @subs.push @on 'mousedown', '.ide-stack-btn', (e) =>
+    @subs.push @on 'click', '.ide-stack-btn', (e) =>
       @togglePanelBtn e, @stackPanel
       false
-    @subs.push @on 'mousedown', '.ide-var-page-btn', (e) =>
+    @subs.push @on 'click', '.ide-var-page-btn', (e) =>
       @openVarPage() or @saveCloseVarPage()
       false
 

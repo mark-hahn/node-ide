@@ -158,7 +158,7 @@ class BreakpointPanel
     @subs.push @$panel.on 'click',  '.ide-list-item', (e) => @showBp    e
     @subs.push @$panel.on 'click',  '.ide-list-del',  (e) => @deleteBp  e
     
-    @subs.push $('.workspace').on 'mousedown focus blur keydown',  (e) => 
+    @subs.push $('.workspace').on 'click focus blur keydown',  (e) => 
       if @floating then @hide()
     
   destroy: ->
