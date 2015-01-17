@@ -21,17 +21,15 @@ class CodeDisplay
       @setFramesInEditor      editor
       @setBreakpointsInEditor editor
       
-      shadowRoot  = atom.views.getView(editor).shadowRoot
-      $shadowRoot = $ shadowRoot
-      lineNumbers = shadowRoot.querySelector '.line-numbers' 
       lineNumberClick = (e) =>
         $tgt = $ e.target
         line = +$tgt.closest('.line-number').attr 'data-buffer-row'
         @ideView.toggleBreakpoint file, line
         false
-      lineNumbers.addEventListener 'click', lineNumberClick
-      @disposables.add new Disposable ->
-        lineNumbers.removeEventListener 'click', lineNumberClick
+        
+      $shadowRoot = $ atom.views.getView(editor).shadowRoot
+      $lineNumbers = $shadowRoot.find '.line-numbers' 
+      @subs.push $lineNumbers.click lineNumberClick
         
   getPath: (editor) ->
     path = editor.getPath()
