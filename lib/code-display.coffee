@@ -15,20 +15,8 @@ class CodeDisplay
     @disposables = new CompositeDisposable
     @subs   = []
     @frames = []
+    @setEvents()
     
-    atom.workspace.observeTextEditors (editor) =>
-      file = @getPath editor
-      @setFramesInEditor      editor
-      @setBreakpointsInEditor editor
-      
-      $shadowRoot = $ atom.views.getView(editor).shadowRoot
-      $lineNumbers = $shadowRoot.children().find '.line-numbers' 
-      @subs.push $lineNumbers.click (e) =>
-        $tgt = $ e.target
-        line = +$tgt.closest('.line-number').attr 'data-buffer-row'
-        @ideView.toggleBreakpoint file, line
-        false
-        
   getPath: (editor) ->
     path = editor.getPath()
     if (pathParts = /^([a-z]:)(.*)$/i.exec path)
@@ -142,6 +130,22 @@ class CodeDisplay
       @setAllFrames()
       @setAllBreakpoints()
     , 50
+
+  setEvents: ->
+    atom.workspace.observeTextEditors (editor) =>
+      file = @getPath editor
+      if /node-ide-worksheet$/.test file
+          return
+      @setFramesInEditor      editor
+      @setBreakpointsInEditor editor
+      
+      $shadowRoot = $ atom.views.getView(editor).shadowRoot
+      $lineNumbers = $shadowRoot.children().find '.line-numbers' 
+      @subs.push $lineNumbers.click (e) =>
+        $tgt = $ e.target
+        line = +$tgt.closest('.line-number').attr 'data-buffer-row'
+        @ideView.toggleBreakpoint file, line
+        false
 
   destroy: ->
     @clearFrames()

@@ -25,16 +25,16 @@ module.exports =
     @breakpoints = {}
     for __, breakpoint of @state.breakpoints
       newBp = new Breakpoint @, breakpoint
+      newBp.id = breakpoint.id
       @breakpoints[newBp.id] = newBp
 
     projDir    = atom.project.getPaths()[0] ? fs.getHomeDirectory()
-    nodeIdeDir = pathUtil.join projDir, '.node-ide'
-    if not fs.existsSync nodeIdeDir
-      fs.makeTreeSync nodeIdeDir
+    @nodeIdeDir = pathUtil.join projDir, '.node-ide'
+    if not fs.existsSync @nodeIdeDir
+      fs.makeTreeSync @nodeIdeDir
       process.nextTick -> 
-        fs.writeFileSync pathUtil.join(nodeIdeDir, '.gitignore'), '**\n'
-    @varPagePath     = pathUtil.join nodeIdeDir, 'node-ide-worksheet.nidews'
-    @internalFileDir = pathUtil.join nodeIdeDir, 'internalFiles'
+        fs.writeFileSync pathUtil.join(@nodeIdeDir, '.gitignore'), '**\n'
+    @internalFileDir = pathUtil.join @nodeIdeDir, 'internalFiles'
     fs.makeTreeSync @internalFileDir
 
     @subs = new CompositeDisposable

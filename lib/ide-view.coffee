@@ -1,6 +1,8 @@
 
 {$,View} = require 'atom-space-pen-views'
 {TextEditor} = require 'atom'
+Worksheet    = require './worksheet'
+
 util = require 'util'
 
 Dock            = require './dock'
@@ -28,10 +30,10 @@ class IdeView extends View
       @div class: 'inspector-buttons', =>
         @div outlet:'stopSign', class:'new-btn octicon ide-bp-btn ide-stop'
         @div class:'new-btn octicon ide-stack-btn ide-stack'
-        @div class:'new-btn octicon ide-var-page-btn ide-eye'
+        @div class:'new-btn octicon ide-worksheet-btn ide-eye'
 
   initialize: (@nodeIde) ->
-    {@state, @internalFileDir, @varPagePath, @breakpoints} = @nodeIde
+    {@state, @internalFileDir, @breakpoints, @nodeIdeDir} = @nodeIde
     
     # console.log 'IdeView initialize', util.inspect @state, depth: null
     
@@ -43,6 +45,7 @@ class IdeView extends View
       @dock            = new Dock            @
       @breakpointPanel = new BreakpointPanel @
       @stackPanel      = new StackPanel      @
+      @worksheet       = new Worksheet       @
       
       @showConnected no
       @toggleConnection()
@@ -53,7 +56,7 @@ class IdeView extends View
       
       if @state.breakpointPanelDocked then @dock.add @breakpointPanel
       if @state.stackPanelDocked      then @dock.add @stackPanel
-      if @state.varPageOpen           then @openVarPage()
+      if @state.worksheetOpen         then @worksheet.open()
       
   getElement: -> @
   
@@ -120,33 +123,6 @@ class IdeView extends View
     @breakpointMgr?.changeBreakpoint breakpoint
     @breakpointPanel.update()
 
-  getVarPageEditor: ->
-    for textEditor in atom.workspace.getTextEditors()
-      if textEditor.getPath() is @varPagePath
-        return textEditor
-    null
-    
-  openVarPage: ->
-    @state.varPageOpen = yes
-    if not @getVarPageEditor()
-      vpLine = @state.varPageLine   ? 0
-      vpCol  = @state.varPageColumn ? 0
-      atom.workspace.open @varPagePath, 
-        split: 'right', initialLine: vpLine, initialColumn: vpCol
-      return yes
-    no
-    
-  saveCloseVarPage: (chgState = yes) ->
-    if chgState then @state.varPageOpen = no
-    if (textEditor = @getVarPageEditor())
-      point = textEditor.getCursorBufferPosition()
-      @state.varPageLine   = point.row
-      @state.varPageColumn = point.column
-      textEditor.saveAs @varPagePath
-      textEditor.destroy()
-      return yes
-    no
-      
   setupEvents: -> 
     @subs.push @on 'click', '.ide-conn', => 
       @connClick()
@@ -174,17 +150,16 @@ class IdeView extends View
     @subs.push @on 'click', '.ide-stack-btn', (e) =>
       @togglePanelBtn e, @stackPanel
       false
-    @subs.push @on 'click', '.ide-var-page-btn', (e) =>
-      @openVarPage() or @saveCloseVarPage()
+    @subs.push @on 'click', '.ide-worksheet-btn', (e) =>
+      @worksheet.open() or @worksheet.saveClose()
       false
 
   destroy: ->
-    @saveCloseVarPage no
     @codeExec?.destroy()
     @breakpointMgr?.destroy()
     @breakpointPanel?.destroy()
     @stackPanel?.destroy()
-    @varPage?.destroy()
+    @worksheet.destroy()
     @dock.destroy()
     for sub in @subs
       sub.off?()

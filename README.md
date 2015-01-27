@@ -25,4 +25,7 @@ A full source-based JS/CS IDE for Atom or any node target
 - Click on the stop sign to pop up the breakpoint list.
   - The Active checkbox will temporarily disable all breakpoints.
   
-  
+### To-Do
+
+- dup breakpoints
+- breakpoints with wrong id

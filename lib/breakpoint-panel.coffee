@@ -14,7 +14,7 @@ class BreakpointPanel
         @label =>
           @input class:'ide-active-chk ide-bp-chk', type:"checkbox", checked: yes
           @text 'Active'
-        @label =>
+        @label  =>
           @input class:'ide-uncaught-chk ide-bp-chk', type:"checkbox", checked: yes
           @text 'Uncaught Exc'
         @label =>
@@ -123,9 +123,9 @@ class BreakpointPanel
     if enbld then @breakpointMgr.setActive yes
     breakpoint = @getBreakpoint e 
     breakpoint.setEnabled enbld
-    # the following is to fix a problem caused by jQuery 1.6 .attr
     id   = breakpoint.id
     $chk = @$panel.find '.ide-list-item[data-bpid="' + id + '"] .ide-list-chk'
+    # the following is to fix a problem caused by jQuery 1.6 .attr
     @ideView.setClrAnyCheckbox $chk, enbld
     false
 
@@ -135,7 +135,7 @@ class BreakpointPanel
     false
     
   deleteBp: (e) -> @breakpointMgr.removeBreakpoint @getBreakpoint e; false
-    
+  
   setDelVisible: (e, vis) ->
     $(e.target).find('.ide-list-del')
                .css visibility: (if vis then 'visible' else 'hidden')
@@ -158,8 +158,13 @@ class BreakpointPanel
     @subs.push @$panel.on 'click',  '.ide-list-item', (e) => @showBp    e
     @subs.push @$panel.on 'click',  '.ide-list-del',  (e) => @deleteBp  e
     
-    @subs.push $('.workspace').on 'click focus blur keydown',  (e) => 
-      if @floating then @hide()
+    @subs.push $('.workspace').on 'click focus blur',  (e) => 
+      if @floating and $(e.target).closest('.ide-view-panel').length is 0
+        @hide()
+    
+    @subs.push $('.workspace').on 'keydown',  (e) => 
+      if @floating and e.which is 27
+        @hide()
     
   destroy: ->
     @$panel.remove()
