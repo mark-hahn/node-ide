@@ -90,6 +90,11 @@ class IdeView extends View
       @codeExec = null
       @showConnected no
     @breakpointMgr.haveCodeExec @codeExec
+    
+  evalExpression: (expr, cb) ->
+    if (connection = @codeExec?.connection)
+      connection.evalExpression expr, cb
+    else cb '<no connection>'
   
   connClick: ->
     if @codeExec and not @ideConn.hasClass 'connected' 
@@ -151,7 +156,10 @@ class IdeView extends View
       @togglePanelBtn e, @stackPanel
       false
     @subs.push @on 'click', '.ide-worksheet-btn', (e) =>
-      @worksheet.open() or @worksheet.saveClose()
+      if not @worksheet.chkOpen()
+        @worksheet.open()
+      else
+        @worksheet.saveClose()
       false
 
   destroy: ->

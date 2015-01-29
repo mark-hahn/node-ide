@@ -36,4 +36,8 @@ class Dock
     if @$panel.children().length is 0
       @$panel.hide()
 
-  destroy: -> @$panel.remove()
+  destroy: -> 
+    @$panel.remove()
+    for sub in @subs
+      sub.off?()
+      sub.dispose?()

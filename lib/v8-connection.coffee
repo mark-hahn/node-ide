@@ -140,6 +140,19 @@ class V8connection
       break for ref in res.refs when ref.handle is script.ref
       cb null, {file: ref.name, line, column}
       
+  evalExpression: (expr, cb) ->
+    expr = '(' + expr + ')'
+    args =
+      expression: expr
+      # frame:
+      # global:
+      # disable_break:
+      # additional_context:
+    @request 'evaluate', args, (err, res) -> 
+      console.log 'evalExpression', '"' + expr + '"', {err, res}
+      cb? err, res?.body    
+      yes
+      
   error: (msg, args...) ->
     if args[0]?.indexOf?('ECONNRESET') > -1 or
        args[1]?.indexOf?('ECONNRESET') > -1
